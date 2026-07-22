@@ -11,7 +11,7 @@
         "summary": "List all tasks",
         "responses": {
           "200": {
-            "description": "An array of tasks",
+            "description": "List of tasks",
             "content": {
               "application/json": {
                 "schema": {
@@ -35,7 +35,7 @@
         },
         "responses": {
           "201": {
-            "description": "The created task",
+            "description": "Created task",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Task" }
@@ -59,15 +59,15 @@
           "name": "id",
           "in": "path",
           "required": true,
-          "description": "ID of the task",
+          "description": "Task ID",
           "schema": { "type": "integer" }
         }
       ],
       "get": {
-        "summary": "Get a single task by ID",
+        "summary": "Get a single task",
         "responses": {
           "200": {
-            "description": "The requested task",
+            "description": "Requested task",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Task" }
@@ -85,7 +85,7 @@
         }
       },
       "put": {
-        "summary": "Update a task by ID",
+        "summary": "Update a task",
         "requestBody": {
           "required": true,
           "content": {
@@ -96,7 +96,7 @@
         },
         "responses": {
           "200": {
-            "description": "The updated task",
+            "description": "Updated task",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Task" }
@@ -122,7 +122,7 @@
         }
       },
       "delete": {
-        "summary": "Delete a task by ID",
+        "summary": "Delete a task",
         "responses": {
           "204": { "description": "Task deleted, no content returned" },
           "404": { "description": "Task not found" }
