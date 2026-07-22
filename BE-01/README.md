@@ -18,7 +18,7 @@
 
 Task API is a small REST API built with **Node.js** and **Express** that manages a list of tasks. It supports the full set of CRUD operations — create, read, update, and delete — plus a health check and a root info endpoint. Interactive documentation is served with Swagger UI at [`/docs`](http://localhost:3000/docs).
 
-Built during the **FlyRank AI Engineering internship**.
+Built during the **FlyRank Backend AI Engineering internship**.
 
 > **Note:** tasks are stored in memory, so the list resets to its seed data each time the server restarts.
 
@@ -70,4 +70,4 @@ Keep-Alive: timeout=5
 
 Interactive docs are generated from [`openapi.json`](./openapi.json) and served at `/docs`. The screenshot below shows the Swagger UI:
 
-![Swagger UI](https://github.com/user-attachments/assets/68074b75-d83c-4b96-a2a7-9fac3016942a)
+![Swagger UI](https://github.com/user-attachments/assets/84428bff-e73e-4637-96a6-0f49fa52780e)
