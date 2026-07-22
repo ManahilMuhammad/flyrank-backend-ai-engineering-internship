@@ -4,6 +4,11 @@ const port = 3000;
 
 app.use(express.json());
 
+const swaggerUi = require('swagger-ui-express');
+const openapiSpec = require('./openapi.json');
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+
 // list of tasks in memory
 let inMemory = [
     {
@@ -92,7 +97,7 @@ app.put('/tasks/:id', (req, res) => {
     if (task == undefined) {
         return res.status(404).json({ "error": idError });
     }
-    if (title == "" || title == undefined || (done != "true" && done != "false")) {
+    if (title == "" || title == undefined || typeof done !== "boolean") {
         return res.status(400).json({ "error": bodyError });
     }
 
