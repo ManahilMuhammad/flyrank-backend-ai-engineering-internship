@@ -1,12 +1,14 @@
+<p align="center"> 
+  <img src="https://github.com/user-attachments/assets/b82e4d9c-d246-4bfd-a675-95bb6586a71e" 
+    alt="Task API — FlyRank AI Engineering Internship" 
+    width="100%" /> 
+</p> 
+
 <div align="center">
 
-<h1>Task API</h1>
-
-<strong>A simple CRUD API for managing tasks.</strong>
-
-![Node](https://img.shields.io/badge/Node.js-18+-6C47FF?style=flat-square)
-![Express](https://img.shields.io/badge/Express-5-6C47FF?style=flat-square)
-![Status](https://img.shields.io/badge/status-working-6C47FF?style=flat-square)
+![Node](https://img.shields.io/badge/Node.js-18+-3EF589?style=flat-square&labelColor=0C1E17)
+![Express](https://img.shields.io/badge/Express-5-3EF589?style=flat-square&labelColor=0C1E17)
+![Status](https://img.shields.io/badge/status-working-3EF589?style=flat-square&labelColor=0C1E17)
 
 </div>
 
@@ -66,5 +68,6 @@ Keep-Alive: timeout=5
 
 ## API Documentation (Swagger UI)
 
-Interactive docs are generated from [`openapi.json`](./openapi.json) and served at `/docs`.
-![Swagger UI](https://github.com/user-attachments/assets/99e091cb-0db0-47e0-b5c0-1f83013de097)
+Interactive docs are generated from [`openapi.json`](./openapi.json) and served at `/docs`. The screenshot below shows the Swagger UI:
+
+![Swagger UI](https://github.com/user-attachments/assets/68074b75-d83c-4b96-a2a7-9fac3016942a)
