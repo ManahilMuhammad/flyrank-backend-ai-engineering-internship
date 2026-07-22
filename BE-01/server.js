@@ -60,12 +60,14 @@ app.post('/tasks', (req, res) => {
     let title = req.body.title;
     let errorMessage = "No title provided";
 
+    const ID = inMemory.length === 0 ? 0 : inMemory[inMemory.length - 1].id + 1;
+
     if (title == undefined || title == "") {
         return res.status(400).json({ "error": errorMessage });
     }
 
     let task = {
-        "id": inMemory.length,
+        "id": ID,
         "title": title,
         "done": false
     };
@@ -73,6 +75,47 @@ app.post('/tasks', (req, res) => {
     inMemory.push(task);
 
     res.status(201).json(task);
+});
+
+// change task
+app.put('/tasks/:id', (req, res) => {
+    const ID = req.params.id;
+    let title = req.body.title;
+    let done = req.body.done;
+
+    let task = inMemory.find(task => task.id == ID);
+    let index = inMemory.findIndex(task => task.id == ID);
+
+    let idError = `Task ${ID} not found`;
+    let bodyError = "Empty or invalid title or done value provided";
+    
+    if (task == undefined) {
+        return res.status(404).json({ "error": idError });
+    }
+    if (title == "" || title == undefined || (done != "true" && done != "false")) {
+        return res.status(400).json({ "error": bodyError });
+    }
+
+    inMemory[index].title = title;
+    inMemory[index].done = done;
+
+    let updatedTask = inMemory[index];
+    
+    res.json(updatedTask);
+});
+
+// delete task
+app.delete('/tasks/:id', (req, res) => {
+    const ID = req.params.id;
+    let index = inMemory.findIndex(task => task.id == ID);
+
+    if (index === -1) {
+        return res.status(404).send();
+    }
+
+    inMemory.splice(index, 1);
+
+    return res.status(204).send();
 });
 
 app.listen(port, () => {
