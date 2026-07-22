@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
+app.use(express.json());
+
 // list of tasks in memory
 let inMemory = [
     {
@@ -19,15 +21,15 @@ let inMemory = [
         "title": "Finish Stage 2",
         "done": true
     }
-]
+];
 
 app.get('/', (req, res) => {
     apiDescription = {
         "name": "Task API",
         "version": "1.0",
         "endpoints": ["/tasks"]
-    }
-    res.json(apiDescription)
+    };
+    res.json(apiDescription);
 });
 
 // health
@@ -37,7 +39,7 @@ app.get('/health', (req, res) => {
 
 // tasks -- return all tasks
 app.get('/tasks', (req, res) => {
-    res.json(inMemory)
+    res.json(inMemory);
 });
 
 // return task with specified ID
@@ -50,7 +52,27 @@ app.get('/tasks/:id', (req, res) => {
         return res.status(404).json({ "error": errorMessage });
     }
 
-    res.json(task)
+    res.json(task);
+});
+
+// add new task
+app.post('/tasks', (req, res) => {
+    let title = req.body.title;
+    let errorMessage = "No title provided";
+
+    if (title == undefined || title == "") {
+        return res.status(400).json({ "error": errorMessage });
+    }
+
+    let task = {
+        "id": inMemory.length,
+        "title": title,
+        "done": false
+    };
+
+    inMemory.push(task);
+
+    res.status(201).json(task);
 });
 
 app.listen(port, () => {
