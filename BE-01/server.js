@@ -1,12 +1,10 @@
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const openapiSpec = require('./openapi.json');
 const app = express();
 const port = 3000;
 
 app.use(express.json());
-
-const swaggerUi = require('swagger-ui-express');
-const openapiSpec = require('./openapi.json');
-
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 // list of tasks in memory
@@ -123,6 +121,7 @@ app.delete('/tasks/:id', (req, res) => {
     return res.status(204).send();
 });
 
+// start server
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
+    console.log(`Task API listening on port ${port}`);
 });
