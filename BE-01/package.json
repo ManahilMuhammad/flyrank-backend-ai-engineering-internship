@@ -1,4 +1,11 @@
 {
+  "name": "task-api",
+  "version": "1.0.0",
+  "description": "A simple CRUD API for managing tasks, built during the FlyRank Backend AI Engineering internship.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "express": "^5.2.1",
     "swagger-ui-express": "^5.0.1"
