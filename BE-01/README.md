@@ -26,14 +26,16 @@ Built during the **FlyRank Backend AI Engineering internship**.
 
 Requires Node.js 18+.
 
+After cloning the root directory, run:
+
 ```bash
-npm install
+npm install --save-dev cross-env
 ```
 
-Then start the server with a single command:
+Then start the server with:
 
 ```bash
-npm start
+npm run be-01
 ```
 
 The server runs on `http://localhost:3000`, and Swagger docs are at `http://localhost:3000/docs`.
