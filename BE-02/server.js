@@ -97,23 +97,24 @@ app.get('/tasks/:id', (req, res) => {
 // add new task
 app.post('/tasks', (req, res) => {
     let title = req.body.title;
-    let errorMessage = "No title provided";
-
-    const ID = inMemory.length === 0 ? 0 : inMemory[inMemory.length - 1].id + 1;
 
     if (title == undefined || title == "") {
-        return res.status(400).json({ "error": errorMessage });
+        return res.status(400).json({ error: 'No title provided' });
     }
 
-    let task = {
-        "id": ID,
-        "title": title,
-        "done": false
-    };
+    db.run('INSERT INTO tasks (title, done) VALUES (?, ?)', [title, 0], function (err) {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
 
-    inMemory.push(task);
+        const task = {
+            id: this.lastID,
+            title: title,
+            done: 0
+        };
 
-    res.status(201).json(task);
+        res.status(201).json(task);
+    });
 });
 
 // change task
