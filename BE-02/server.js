@@ -117,45 +117,60 @@ app.post('/tasks', (req, res) => {
     });
 });
 
-// change task
+// update task
 app.put('/tasks/:id', (req, res) => {
     const ID = req.params.id;
     let title = req.body.title;
-    let done = req.body.done;
+    let doneVal = req.body.done;
 
-    let task = inMemory.find(task => task.id == ID);
-    let index = inMemory.findIndex(task => task.id == ID);
-
-    let idError = `Task ${ID} not found`;
-    let bodyError = "Empty or invalid title or done value provided";
-
-    if (task == undefined) {
-        return res.status(404).json({ "error": idError });
-    }
-    if (title == "" || title == undefined || typeof done !== "boolean") {
-        return res.status(400).json({ "error": bodyError });
+    // validate so only true, false, 0, 1, 'true', 'false' allowed as done values
+    if (
+        typeof doneVal !== 'boolean'
+        && doneVal !== 0 && doneVal !== 1 &&
+        doneVal !== 'true' && doneVal !== 'false'
+    ) {
+        return res.status(400).json({ error: 'Empty or invalid done value provided' });
     }
 
-    inMemory[index].title = title;
-    inMemory[index].done = done;
+    // convert from other boolean representations to 0/1 so sql understands
+    let done = doneVal === true || doneVal === 1 || doneVal === 'true' ? 1 : 0;
 
-    let updatedTask = inMemory[index];
+    if (title == "" || title == undefined) {
+        return res.status(400).json({ error: 'Empty or invalid title value provided' });
+    }
 
-    res.json(updatedTask);
+    db.run('UPDATE tasks SET title = ?, done = ? WHERE id = ?', [title, done, ID], function (err) {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: `Task ${ID} not found` });
+        }
+
+        const task = {
+            id: ID,
+            title: title,
+            done: done
+        };
+
+        res.json(task);
+    });
 });
 
 // delete task
 app.delete('/tasks/:id', (req, res) => {
     const ID = req.params.id;
-    let index = inMemory.findIndex(task => task.id == ID);
 
-    if (index === -1) {
-        return res.status(404).send();
-    }
+    db.run('DELETE FROM tasks WHERE id = ?', [ID], function (err) {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (this.changes === 0) {
+            return res.status(404).send();
+        }
 
-    inMemory.splice(index, 1);
-
-    return res.status(204).send();
+        return res.status(204).send();
+    });
 });
 
 // start server
