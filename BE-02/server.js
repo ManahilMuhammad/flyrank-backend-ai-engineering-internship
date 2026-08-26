@@ -47,7 +47,7 @@ db.get('SELECT COUNT(*) as count FROM tasks', (err, row) => {
     }
 
     if (row.count == 0) {
-        for (i=0; i<inMemory.length; i++) {
+        for (i = 0; i < inMemory.length; i++) {
             db.run('INSERT INTO tasks (title, done) VALUES (?, ?)', [inMemory[i].title, inMemory[i].done]);
         }
     }
@@ -69,20 +69,29 @@ app.get('/health', (req, res) => {
 
 // tasks -- return all tasks
 app.get('/tasks', (req, res) => {
-    res.json(inMemory);
+    db.all('SELECT * FROM tasks', (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        res.json(rows);
+    });
 });
 
 // return task with specified ID
 app.get('/tasks/:id', (req, res) => {
     const ID = req.params.id;
-    let task = inMemory.find(task => task.id == ID);
-    let errorMessage = `Task ${ID} not found`;
-    
-    if (task == undefined) {
-        return res.status(404).json({ "error": errorMessage });
-    }
 
-    res.json(task);
+    db.get('SELECT * FROM tasks WHERE id = ?', [ID], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (!row) {
+            return res.status(404).json({ error: `Task ${ID} not found` });
+        }
+
+        res.json(row);
+    });
 });
 
 // add new task
@@ -118,7 +127,7 @@ app.put('/tasks/:id', (req, res) => {
 
     let idError = `Task ${ID} not found`;
     let bodyError = "Empty or invalid title or done value provided";
-    
+
     if (task == undefined) {
         return res.status(404).json({ "error": idError });
     }
@@ -130,7 +139,7 @@ app.put('/tasks/:id', (req, res) => {
     inMemory[index].done = done;
 
     let updatedTask = inMemory[index];
-    
+
     res.json(updatedTask);
 });
 
