@@ -95,7 +95,7 @@ This returns all completed tasks. Here is a screenshot of the database viewer:
 ## Example request
 
 ```console
-$ curl -i -X POST http://localhost:3000/tasks -H "Content-Type: application/json" -d "{\"title\":\"Buy milk\"}"
+$ curl -i -X POST http://localhost:3001/tasks -H "Content-Type: application/json" -d "{\"title\":\"Buy milk\"}"
 HTTP/1.1 201 Created
 X-Powered-By: Express
 Content-Type: application/json; charset=utf-8
