@@ -5,10 +5,13 @@
   "main": "server.js",
   "scripts": {
     "be-01": "cd BE-01 && cross-env PORT=3000 node server.js",
-    "be-02": "cd BE-02 && cross-env PORT=3001 node server.js"
+    "be-02": "cd BE-02 && cross-env PORT=3001 node server.js",
+    "be-04": "cd BE-04 && cross-env PORT=3003 node server.js"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "pg": "^8.23.0",
     "sqlite3": "^6.0.1",
     "swagger-ui-express": "^5.0.1"
   },
