@@ -39,7 +39,7 @@ Then start the server with:
 npm run be-02
 ```
 
-The server runs on `http://localhost:3000`, and Swagger docs are at `http://localhost:3000/docs`.
+The server runs on `http://localhost:3001`, and Swagger docs are at `http://localhost:3001/docs`.
 The database is created automatically on the first run with three seed tasks.
 
 ## Database
