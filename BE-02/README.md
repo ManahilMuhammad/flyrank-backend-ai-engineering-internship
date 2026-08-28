@@ -17,7 +17,7 @@
 
 ## What this is
 
-Task API is a small REST API built with **Node.js**, **Express**, and **SQLite** that manages a list of tasks. It supports the full set of CRUD operations — create, read, update, and delete — with data persisted to a SQLite database. Interactive documentation is served with Swagger UI at [`/docs`](http://localhost:3000/docs).
+Task API is a small REST API built with **Node.js**, **Express**, and **SQLite** that manages a list of tasks. It supports the full set of CRUD operations — create, read, update, and delete — with data persisted to a SQLite database. Interactive documentation is served with Swagger UI at [`/docs`](http://localhost:3001/docs).
 
 This builds on [BE-01](https://github.com/ManahilMuhammad/flyrank-backend-ai-engineering-internship/tree/main/BE-01) by replacing the in-memory array with a persistent SQLite database, so tasks survive server restarts.
 
