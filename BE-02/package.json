@@ -1,0 +1,19 @@
+{
+  "name": "BE-2",
+  "version": "1.0.0",
+  "description": "CRUD API with SQLite data persistence.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "cross-env PORT=3001 node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "sqlite3": "^6.0.1",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  }
+}

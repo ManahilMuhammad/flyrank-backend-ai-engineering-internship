@@ -2,18 +2,20 @@
   "name": "flyrank-backend-ai-engineering-internship",
   "version": "1.0.0",
   "description": "FlyRank Backend AI Engineering internship projects.",
-  "main": "server.js",
+  "workspaces": [
+    "BE-01",
+    "BE-02",
+    "BE-03",
+    "BE-04"
+  ],
   "scripts": {
-    "be-01": "cd BE-01 && cross-env PORT=3000 node server.js",
-    "be-02": "cd BE-02 && cross-env PORT=3001 node server.js",
-    "be-04": "cd BE-04 && cross-env PORT=3003 node server.js"
+    "be-01": "cd BE-01 && npm run dev",
+    "be-02": "cd BE-02 && npm run dev",
+    "be-03": "cd BE-03 && npm run dev",
+    "be-04": "cd BE-04 && npm run dev"
   },
   "dependencies": {
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "pg": "^8.23.0",
-    "sqlite3": "^6.0.1",
-    "swagger-ui-express": "^5.0.1"
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "cross-env": "^10.1.0"

@@ -1,0 +1,19 @@
+{
+  "name": "BE-04",
+  "version": "1.0.0",
+  "description": "CRUD API with Postgres and Docker.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "cross-env PORT=3003 node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.23.0",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  }
+}
