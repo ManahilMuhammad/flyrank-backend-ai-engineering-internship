@@ -9,10 +9,16 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 
+const swaggerUiOptions = {
+    swaggerOptions: {
+        persistAuthorization: true,
+        deepLinking: true
+    }
+};
 const openapiSpec = JSON.parse(fs.readFileSync(path.join(__dirname, './openapi.json'), 'utf-8'));
 
 // get routes
-import indexRoutes from  './routes/index.js';
+import indexRoutes from './routes/index.js';
 import tasksRoutes from './routes/tasks.js';
 import authRoutes from './routes/auth.js';
 import publicRoutes from './routes/public.js';
@@ -24,7 +30,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // assign routes
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, swaggerUiOptions));
 app.use('/', indexRoutes);
 app.use('/tasks', tasksRoutes);
 app.use('/auth', authRoutes);
