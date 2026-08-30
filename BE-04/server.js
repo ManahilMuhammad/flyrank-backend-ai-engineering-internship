@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // connect database
-const db = require('./db/repository');
+const db = require('../db/repository');
 
 app.use(express.json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
