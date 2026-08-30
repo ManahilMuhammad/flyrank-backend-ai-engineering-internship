@@ -1,39 +1,23 @@
 import express from 'express';
-import { supabase } from '../lib/supabaseClient.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // protected profile
-router.get('/profile', async (req, res) => {
-    const authHeader = req.headers.authorization;
+router.get('/profile', verifyToken, async (req, res) => {
+    res.status(200).json({
+        id: req.user.id,
+        email: req.user.email,
+        created_at: req.user.created_at
+    });
+});
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Access token required' });
-    }
-
-    // get characters after 'Bearer ' which is 7 characters long
-    const token = authHeader.slice(7);
-
-    if (!token) {
-        return res.status(401).json({ error: 'Access token required' });
-    }
-
-    try {
-        const { data, error } = await supabase.auth.getUser(token);
-
-        if (error || !data.user) {
-            return res.status(401).json({ error: 'Invalid or expired token' });
-        }
-
-        return res.status(200).json({
-            id: data.user.id,
-            email: data.user.email,
-            created_at: data.user.created_at
-        });
-    } catch (err) {
-        console.error('Token verification error: ', err);
-        return res.status(401).json({ error: 'Invalid or expired token' });
-    }
+// dashboard
+router.get('/dashboard', verifyToken, async (req, res) => {
+    res.status(200).json({
+        message: `Welcome ${req.user.email}! This is your dashboard`,
+        user_id: req.user.id
+    });
 });
 
 export default router;

@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../lib/supabaseClient.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -53,6 +54,17 @@ router.post('/login', async (req, res) => {
     } catch (err) {
         console.error('Login error: ', err);
         return res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+// log out of account
+router.post('/logout', verifyToken, async (req, res) => {
+    try {
+        await supabase.auth.signOut();
+        return res.status(204).send();
+    } catch (err) {
+        console.error('Logout error: ', err);
+        return res.status(500).json({ error: 'Logout failed' });
     }
 });
 
