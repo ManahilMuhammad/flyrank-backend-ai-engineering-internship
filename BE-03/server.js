@@ -15,6 +15,8 @@ const openapiSpec = JSON.parse(fs.readFileSync(path.join(__dirname, './openapi.j
 import indexRoutes from  './routes/index.js';
 import tasksRoutes from './routes/tasks.js';
 import authRoutes from './routes/auth.js';
+import publicRoutes from './routes/public.js';
+import protectedRoutes from './routes/protected.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,6 +28,8 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 app.use('/', indexRoutes);
 app.use('/tasks', tasksRoutes);
 app.use('/auth', authRoutes);
+app.use('/public', publicRoutes);
+app.use('/protected', protectedRoutes);
 
 // start server
 app.listen(port, () => {
