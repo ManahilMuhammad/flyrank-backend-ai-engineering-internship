@@ -2,19 +2,31 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { z } from 'zod';
 
 const CACHE_DIR = './cache'; // cache directory
+const OUTPUT_DIR = './output'; // output directory
 const BASE_URL = 'https://books.toscrape.com/';
 const USER_AGENT = 'FlyRankInternshipA9/1.0 (https://github.com/ManahilMuhammad/flyrank-backend-ai-engineering-internship)';
 const DETAIL_CACHE_DIR = path.join(CACHE_DIR, 'books'); // details cache directory
 
-// verify that cache directories exist; if not, create them
-if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR);
-}
-if (!fs.existsSync(DETAIL_CACHE_DIR)) {
-    fs.mkdirSync(DETAIL_CACHE_DIR);
-}
+// verify that directories exist; if not, create them
+[CACHE_DIR, OUTPUT_DIR, DETAIL_CACHE_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recurisve: true });
+});
+
+// book schema definition
+const BookSchema = z.object({
+    title: z.string().min(1),
+    product_url: z.string().min(1),
+    price_text: z.string().nullable(),
+    price_dbp: z.number().nonnegative().nullable(),
+    availability_text: z.string().nullable(),
+    rating_text: z.string().nullable(),
+    description: z.string().nullable(),
+    source_page: z.string().url(),
+    fetched_at: z.string().datetime()
+});
 
 // get file path of cache
 function getCachePath(pageNum) {
@@ -133,27 +145,84 @@ function extractDetails(html, bookUrl, sourceUrl) {
     const $ = cheerio.load(html);
     const fetchedAt = new Date().toISOString();
 
-    // target product area
-    const product = $('article.product_page');
-
     // extract details
-    const title = product.find('h1').text().trim() || null;
-    const price = product.find('.price_color').text().trim() || null;
-    const availability = product.find('.instock.availability').text().trim() || null;
-    const rating = $('p.star-rating').attr('class') || null;
-    const description = product.find('#product_description + p').text().trim() || null;
+    const title = $('h1').text().trim();
+    const price = $('.price_color').text().trim();
+    const availability = $('.instock.availability').text().trim();
+    const rating = $('p.star-rating').attr('class');
+    const description = $('#product_description').next('p').text().trim();
 
     // return extracted details
     return {
-        title,
+        title: title || null,
         product_url: bookUrl,
-        price_text: price,
-        availability_text: availability,
+        price_text: price || null,
+        availability_text: availability || null,
         rating_text: rating ? rating.split(' ')[1] : null,
-        description,
+        description: description || null,
         source_page: sourceUrl,
         fetched_at: fetchedAt
     };
+}
+
+// clean price
+function cleanPrice(priceText) {
+    if (!priceText) return null;
+
+    // remove the sign from it and covert it to a number
+    const match = priceText.match(/[\d.]+/);
+    return match ? parseFloat(match[0]) : null;
+}
+
+// normalise record
+function normaliseRecord(record) {
+    return {
+        ...record,
+        price_gbp: cleanPrice(record.price_text)
+    };
+}
+
+// validate and store records
+function validateAndStore(records) {
+    const valid = [];
+    const errors = [];
+    const seen = new Set();
+
+    for (const record of records) {
+        const normalised = normaliseRecord(record);
+
+        // deduplication
+        if (seen.has(normalised.product_url)) {
+            continue;
+        }
+
+        try {
+            BookSchema.parse(normalised);
+            valid.push(normalised);
+            seen.add(normalised.product_url);
+        } catch (err) {
+            errors.push({
+                record: normalised,
+                error: err.message
+            });
+        }
+    }
+
+    // write valid records
+    fs.writeFileSync(
+        path.join(OUTPUT_DIR, 'books.json'),
+        JSON.stringify(valid, null, 2)
+    );
+
+    // write errors (if any)
+    if (errors.length > 0) {
+        fs.writeFileSync(
+            path.join(OUTPUT_DIR, 'errors.json'),
+            JSON.stringify(errors, null, 2)
+        );
+    }
+
+    return { valid, errors };
 }
 
 async function crawler() {
@@ -213,12 +282,16 @@ async function main() {
     const sourceUrl = `${BASE_URL}catalogue/page-1.html`;
     const records = await extractAllDetails(bookUrls, sourceUrl); // get details
 
-    if (records.length > 0) {
-        console.log('Sample record: ');
-        console.log(JSON.stringify(records[0], null, 2));
-    }
+    const { valid, errors } = validateAndStore(records);
 
-    console.log(`\ndetail_pages=${records.length}`);
+    console.log(`\nValidation Results: `);
+    console.log(`detail_pages=${valid.length}`);
+    console.log(`errors=${errors.length}`);
+
+    if (valid.length > 0) {
+        console.log('Sample record: ');
+        console.log(JSON.stringify(valid[0], null, 2));
+    }
 }
 
 await main();
