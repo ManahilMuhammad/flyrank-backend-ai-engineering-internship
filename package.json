@@ -6,13 +6,15 @@
     "BE-01",
     "BE-02",
     "BE-03",
-    "BE-04"
+    "BE-04",
+    "BE-05"
   ],
   "scripts": {
     "be-01": "cd BE-01 && npm run dev",
     "be-02": "cd BE-02 && npm run dev",
     "be-03": "cd BE-03 && npm run dev",
-    "be-04": "cd BE-04 && npm run dev"
+    "be-04": "cd BE-04 && npm run dev",
+    "be-05": "cd BE-05 && npm run dev"
   },
   "dependencies": {
     "dotenv": "^17.4.2"
