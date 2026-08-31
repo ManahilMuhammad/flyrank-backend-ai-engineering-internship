@@ -28,6 +28,15 @@ const BookSchema = z.object({
     fetched_at: z.string().datetime()
 });
 
+const stats = {
+    start_time: new Date().toISOString(),
+    pages_fetched: 0,
+    cache_hits: 0,
+    valid_records: 0,
+    invalid_records: 0,
+    failed_pages: 0
+};
+
 // get file path of cache
 function getCachePath(pageNum) {
     return path.join(CACHE_DIR, `catalogue-page-${pageNum}.html`); // create distinct file path using page number
@@ -41,26 +50,49 @@ function getBookCachePath(url) {
 }
 
 // fetch page (first time)
-async function fetchPage(url) {
-    try {
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': USER_AGENT
-            },
-            timeout: 5000 // 5 second timeout
-        });
+async function fetchPage(url, retries = 1) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const response = await axios.get(url, {
+                headers: {
+                    'User-Agent': USER_AGENT
+                },
+                timeout: 5000 // 5 second timeout
+            });
 
-        // if failed to fetch
-        if (response.status !== 200) {
-            console.error(`Failed to fetch: status ${response.status}`);
+            // if failed to fetch
+            if (response.status !== 200) {
+                // do not retry on 404 or 403
+                if (response.status === 404 || response.status === 403) {
+                    console.error(`Skipped ${url}: ${response.status}`);
+                    return null;
+                }
+
+                // retry on 5xx
+                if (response.status >= 500 && attempt < retries) {
+                    console.log(`Retry ${attempt + 1}/${retries} for ${url}`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    continue;
+                }
+                return null;
+            }
+
+            stats.pages_fetched++;
+            return response.data;
+        } catch (err) {
+            // retry on timeout or network errors
+            if ((err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') && attempt < retries) {
+                console.log(`Retry ${attempt + 1}/${retries} for ${url}`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                continue;
+            }
+
+            console.error(`Failed to fetch ${url} : ${err?.message}`);
             return null;
         }
-
-        return response.data;
-    } catch (err) {
-        console.error(`Fetch error: ${err?.message || 'Unknown error'}`);
-        return null;
     }
+
+    return null;
 }
 
 async function getPage(num, url) {
@@ -69,6 +101,7 @@ async function getPage(num, url) {
     // try to get page from cache first
     if (fs.existsSync(cache)) {
         console.log(`CACHE HIT - page ${num}`);
+        stats.cache_hits++;
         return fs.readFileSync(cache, 'utf-8');
     }
 
@@ -91,6 +124,7 @@ async function getBookPage(url) {
 
     // get from cache if already exists there
     if (fs.existsSync(cache)) {
+        stats.cache_hits++;
         return fs.readFileSync(cache, 'utf-8');
     }
 
@@ -100,6 +134,8 @@ async function getBookPage(url) {
 
     if (html) {
         fs.writeFileSync(cache, html);
+    } else {
+        stats.failed_pages++;
     }
 
     return html;
@@ -200,7 +236,9 @@ function validateAndStore(records) {
             BookSchema.parse(normalised);
             valid.push(normalised);
             seen.add(normalised.product_url);
+            stats.valid_records++;
         } catch (err) {
+            stats.invalid_records++;
             errors.push({
                 record: normalised,
                 error: err.message
@@ -235,13 +273,14 @@ async function crawler() {
 
         if (!html) {
             console.error(`Failed to get page ${pageNum}`);
+            pageNum++;
             break;
         }
 
         // get links
         const links = extractLinks(html, currUrl);
         allLinks = allLinks.concat(links);
-
+  
         // find next page
         const nextUrl = getNextUrl(html, currUrl);
         if (nextUrl && pageNum < 3) {
@@ -257,7 +296,7 @@ async function crawler() {
 
     console.log(`\ncatalogue_pages=${pageNum}`);
     console.log(`discovered=${allLinks.length}`);
-    console.log(`unique_urls=${uniqLinks.length}`);
+    console.log(`unique_urls=${uniqLinks.length}\n`);
 
     return uniqLinks;
 }
@@ -269,12 +308,45 @@ async function extractAllDetails(urls, sourceUrl) {
     for (const url of urls) {
         const html = await getBookPage(url);
         if (html) {
-            const record = extractDetails(html, url, sourceUrl); // extract details from page
-            records.push(record);
+            try {
+                const record = extractDetails(html, url, sourceUrl); // extract details from page
+                records.push(record);
+            } catch (err) {
+                console.error(`Failed to extract details from ${url}: ${err.message}`);
+                stats.failed_pages++;
+            }
         }
     }
 
     return records;
+}
+
+// write report
+function writeReport() {
+    const end_time = new Date().toISOString();
+    const start = new Date(stats.start_time);
+    const end = new Date(end_time);
+    const duration_seconds = (end - start) / 1000;
+
+    const report = {
+        start_time: stats.start_time,
+        end_time: end_time,
+        duration_seconds: duration_seconds.toFixed(2),
+        pages_fetched: stats.pages_fetched,
+        cache_hits: stats.cache_hits,
+        valid_records: stats.valid_records,
+        invalid_records: stats.invalid_records,
+        failed_pages: stats.failed_pages
+    };
+
+    // save report
+    fs.writeFileSync(
+        path.join(OUTPUT_DIR, 'run-report.json'),
+        JSON.stringify(report, null, 2)
+    );
+
+    console.log('\nRun Report: ');
+    console.log(JSON.stringify(report, null, 2));
 }
 
 async function main() {
@@ -282,16 +354,8 @@ async function main() {
     const sourceUrl = `${BASE_URL}catalogue/page-1.html`;
     const records = await extractAllDetails(bookUrls, sourceUrl); // get details
 
-    const { valid, errors } = validateAndStore(records);
-
-    console.log(`\nValidation Results: `);
-    console.log(`detail_pages=${valid.length}`);
-    console.log(`errors=${errors.length}`);
-
-    if (valid.length > 0) {
-        console.log('Sample record: ');
-        console.log(JSON.stringify(valid[0], null, 2));
-    }
+    validateAndStore(records);
+    writeReport();
 }
 
 await main();
