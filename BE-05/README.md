@@ -1,4 +1,19 @@
-# What this is
+<p align="center"> 
+  <img src="https://github.com/user-attachments/assets/4cc29149-68e0-49c1-97ab-035f8c90db0e" 
+    alt="The Polite Scraper — FlyRank AI Engineering Internship" 
+    width="100%" /> 
+</p> 
+
+<div align="center">
+
+![Node](https://img.shields.io/badge/Node.js-18+-3EF589?style=flat-square&labelColor=0C1E17)
+![Status](https://img.shields.io/badge/status-working-3EF589?style=flat-square&labelColor=0C1E17)
+
+</div>
+
+---
+
+## What this is
 
 A Node.js web scraper that extracts book data from [Books to Scrape](https://books.toscrape.com/), a sandbox site built for learning web scraping.
 
