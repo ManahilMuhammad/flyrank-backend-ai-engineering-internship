@@ -1,0 +1,14 @@
+{
+  "name": "BE-05",
+  "version": "1.0.0",
+  "description": "Web scraper for Books to Scrape sandbox site.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  }
+}
