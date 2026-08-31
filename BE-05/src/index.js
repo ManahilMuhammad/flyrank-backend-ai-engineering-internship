@@ -3,18 +3,29 @@ import path from 'path';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-const CACHE_DIR = './cache';
+const CACHE_DIR = './cache'; // cache directory
 const BASE_URL = 'https://books.toscrape.com/';
 const USER_AGENT = 'FlyRankInternshipA9/1.0 (https://github.com/ManahilMuhammad/flyrank-backend-ai-engineering-internship)';
+const DETAIL_CACHE_DIR = path.join(CACHE_DIR, 'books'); // details cache directory
 
-// verify that cache directory exists; if not, create it
+// verify that cache directories exist; if not, create them
 if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR);
+}
+if (!fs.existsSync(DETAIL_CACHE_DIR)) {
+    fs.mkdirSync(DETAIL_CACHE_DIR);
 }
 
 // get file path of cache
 function getCachePath(pageNum) {
     return path.join(CACHE_DIR, `catalogue-page-${pageNum}.html`); // create distinct file path using page number
+}
+
+// get file path of 
+function getBookCachePath(url) {
+    const parts = url.split('/').filter(Boolean);
+    const bookSlug = parts[parts.length - 2]; // get the folder name, not index
+    return path.join(DETAIL_CACHE_DIR, `${bookSlug}.html`);
 }
 
 // fetch page (first time)
@@ -62,6 +73,26 @@ async function getPage(num, url) {
     return html;
 }
 
+// get book page using URL
+async function getBookPage(url) {
+    const cache = getBookCachePath(url);
+
+    // get from cache if already exists there
+    if (fs.existsSync(cache)) {
+        return fs.readFileSync(cache, 'utf-8');
+    }
+
+    // otherwise fetch it
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const html = await fetchPage(url);
+
+    if (html) {
+        fs.writeFileSync(cache, html);
+    }
+
+    return html;
+}
+
 // extract links
 function extractLinks(html, url) {
     const $ = cheerio.load(html);
@@ -96,6 +127,33 @@ function getNextUrl(html, currUrl) {
     }
 
     return null;
+}
+
+function extractDetails(html, bookUrl, sourceUrl) {
+    const $ = cheerio.load(html);
+    const fetchedAt = new Date().toISOString();
+
+    // target product area
+    const product = $('article.product_page');
+
+    // extract details
+    const title = product.find('h1').text().trim() || null;
+    const price = product.find('.price_color').text().trim() || null;
+    const availability = product.find('.instock.availability').text().trim() || null;
+    const rating = $('p.star-rating').attr('class') || null;
+    const description = product.find('#product_description + p').text().trim() || null;
+
+    // return extracted details
+    return {
+        title,
+        product_url: bookUrl,
+        price_text: price,
+        availability_text: availability,
+        rating_text: rating ? rating.split(' ')[1] : null,
+        description,
+        source_page: sourceUrl,
+        fetched_at: fetchedAt
+    };
 }
 
 async function crawler() {
@@ -135,4 +193,32 @@ async function crawler() {
     return uniqLinks;
 }
 
-await crawler();
+async function extractAllDetails(urls, sourceUrl) {
+    const records = [];
+
+    // get each book page
+    for (const url of urls) {
+        const html = await getBookPage(url);
+        if (html) {
+            const record = extractDetails(html, url, sourceUrl); // extract details from page
+            records.push(record);
+        }
+    }
+
+    return records;
+}
+
+async function main() {
+    const bookUrls = await crawler(); // get book urls
+    const sourceUrl = `${BASE_URL}catalogue/page-1.html`;
+    const records = await extractAllDetails(bookUrls, sourceUrl); // get details
+
+    if (records.length > 0) {
+        console.log('Sample record: ');
+        console.log(JSON.stringify(records[0], null, 2));
+    }
+
+    console.log(`\ndetail_pages=${records.length}`);
+}
+
+await main();
