@@ -1,0 +1,90 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Priors API",
+    "version": "0.1.0",
+    "description": "Maps the third-party sources an AI engine retrieves for a category, audits how a brand is described in each, and ranks off-site actions by leverage."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3010",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase access token"
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "API info",
+        "operationId": "getInfo",
+        "tags": ["General"],
+        "responses": {
+          "200": {
+            "description": "API information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "version": { "type": "string" },
+                    "description": { "type": "string" },
+                    "docs": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Checks the database connection and reports the latest applied migration.",
+        "operationId": "getHealth",
+        "tags": ["General"],
+        "responses": {
+          "200": {
+            "description": "Service and database are up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "database": { "type": "string", "example": "connected" },
+                    "migration": { "type": "string", "nullable": true, "example": "001_init.sql" }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "degraded" },
+                    "database": { "type": "string", "example": "unreachable" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

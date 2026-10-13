@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: priors
+    ports:
+      - "5433:5432" # 5433 so can run next to BE-04 database on 5432
+    volumes:
+      - priors_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d priors"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # local SMTP inbox for weekly report emails (web UI on http://localhost:8025)
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  priors_data:
