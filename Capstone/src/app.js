@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import indexRoutes from './routes/index.js';
+import authRoutes from './routes/auth.js';
+import workspaceRoutes from './routes/workspaces.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const openapiSpec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../openapi.json'), 'utf-8'));
@@ -24,6 +26,8 @@ export function createApp() {
 
     app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, swaggerUiOptions));
     app.use('/', indexRoutes);
+    app.use('/auth', authRoutes);
+    app.use('/workspaces', workspaceRoutes);
 
     // unknown routes
     app.use((req, res) => {

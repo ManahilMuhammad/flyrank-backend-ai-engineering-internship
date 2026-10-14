@@ -3,7 +3,7 @@
   "info": {
     "title": "Priors API",
     "version": "0.1.0",
-    "description": "Maps the third-party sources an AI engine retrieves for a category, audits how a brand is described in each, and ranks off-site actions by leverage."
+    "description": "Maps the third-party sources an AI engine retrieves for a category, audits how a brand is described in each, and ranks off-site actions by leverage.\n\n**To try authenticated routes:** call `POST /auth/login`, copy `access_token`, click **Authorize** and paste it."
   },
   "servers": [
     {
@@ -11,13 +11,150 @@
       "description": "Development server"
     }
   ],
+  "tags": [
+    { "name": "General" },
+    { "name": "Auth" },
+    { "name": "Workspaces", "description": "A workspace is a tenant. Everything a client owns lives under one." },
+    { "name": "Brands", "description": "The brand whose standing is audited. `fact_sheet` is the ground truth used to detect stale descriptions." }
+  ],
   "components": {
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Supabase access token"
+        "description": "Supabase access token from POST /auth/login"
+      }
+    },
+    "parameters": {
+      "workspaceId": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "brandId": {
+        "name": "brandId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Invalid request body" },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": { "type": "string", "example": "name" },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "Credentials": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 6 }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string" }
+        }
+      },
+      "WorkspaceInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100, "example": "FlyRank demo" }
+        }
+      },
+      "Workspace": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "role": { "type": "string", "enum": ["owner", "member"] }
+        }
+      },
+      "BrandInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100, "example": "FlyRank" },
+          "aliases": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string" },
+            "example": ["FlyRank AI", "flyrank.ai"]
+          },
+          "fact_sheet": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Any JSON object, up to 20,000 characters. Current facts used to spot stale mentions.",
+            "example": {
+              "as_of": "2026-10-14",
+              "pricing_usd_per_month": { "Sparrow": 1999, "Owl": 3499, "Eagle": 4999, "Phoenix": 9999 },
+              "engines_tracked": ["ChatGPT", "Perplexity", "Claude", "Gemini"]
+            }
+          }
+        }
+      },
+      "BrandUpdate": {
+        "type": "object",
+        "description": "Any subset of the brand fields; at least one is required.",
+        "properties": {
+          "name": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "fact_sheet": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "Brand": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "workspace_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "fact_sheet": { "type": "object", "additionalProperties": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing, invalid or expired access token",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "NotFound": {
+        "description": "Not found, or belongs to a workspace you are not a member of",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "BadRequest": {
+        "description": "Request body failed validation",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ValidationError" } } }
+      },
+      "Forbidden": {
+        "description": "You are a member of the workspace but lack the required role",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
       }
     }
   },
@@ -83,6 +220,259 @@
               }
             }
           }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "summary": "Create an account",
+        "description": "If email confirmation is enabled in Supabase, `confirmation_required` is true and login works only after confirming.",
+        "operationId": "signup",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credentials" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "confirmation_required": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Log in and get an access token",
+        "operationId": "login",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credentials" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": { "type": "string" },
+                    "refresh_token": { "type": "string" },
+                    "expires_at": { "type": "integer", "description": "Unix seconds" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": {
+            "description": "Invalid login credentials",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Who the access token belongs to",
+        "operationId": "getMe",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Current user",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/workspaces": {
+      "post": {
+        "summary": "Create a workspace (you become its owner)",
+        "operationId": "createWorkspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkspaceInput" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workspace" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "get": {
+        "summary": "List workspaces you are a member of",
+        "operationId": "listWorkspaces",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Your workspaces",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Workspace" } }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}": {
+      "parameters": [{ "$ref": "#/components/parameters/workspaceId" }],
+      "get": {
+        "summary": "Get a workspace",
+        "operationId": "getWorkspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Workspace with your role in it",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workspace" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "summary": "Rename a workspace (owner only)",
+        "operationId": "renameWorkspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkspaceInput" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Renamed",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workspace" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a workspace and everything in it (owner only)",
+        "operationId": "deleteWorkspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/brands": {
+      "parameters": [{ "$ref": "#/components/parameters/workspaceId" }],
+      "post": {
+        "summary": "Create a brand",
+        "operationId": "createBrand",
+        "tags": ["Brands"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BrandInput" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Brand" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "get": {
+        "summary": "List brands in a workspace",
+        "operationId": "listBrands",
+        "tags": ["Brands"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Brands",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Brand" } }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/brands/{brandId}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/workspaceId" },
+        { "$ref": "#/components/parameters/brandId" }
+      ],
+      "get": {
+        "summary": "Get a brand",
+        "operationId": "getBrand",
+        "tags": ["Brands"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Brand",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Brand" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "summary": "Update a brand (any subset of fields, e.g. just the fact sheet)",
+        "operationId": "updateBrand",
+        "tags": ["Brands"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BrandUpdate" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Brand" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a brand",
+        "operationId": "deleteBrand",
+        "tags": ["Brands"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
     }
