@@ -36,9 +36,15 @@ export function createApp() {
 
     // forward rejected promises from async handlers
     app.use((err, req, res, next) => {
+        // Postgres unique violation, e.g. renaming a query to text that already exists in the category
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'That already exists' });
+        }
+
         const status = err.status || 500;
-        // client errors != server faults so only log stack traces for 5xx
-        if (status >= 500) console.error('Unhandled error: ', err);
+        // client errors != server faults so only log stack traces for unexpected 5xx
+        // (expected ones like an LLM outage are already logged where they happen)
+        if (status >= 500 && !err.expose) console.error('Unhandled error: ', err);
         res.status(status).json({ error: err.expose ? err.message : 'Internal server error' });
     });
 

@@ -24,7 +24,7 @@ describe('general routes', () => {
     it('GET /health reports a connected database and the latest migration', async () => {
         const res = await request(app).get('/health');
         expect(res.status).toBe(200);
-        expect(res.body).toMatchObject({ status: 'ok', database: 'connected', migration: '001_init.sql' });
+        expect(res.body).toMatchObject({ status: 'ok', database: 'connected', migration: '002_query_origin.sql' });
     });
 
     it('unknown routes return 404 JSON', async () => {

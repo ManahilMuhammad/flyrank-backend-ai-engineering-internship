@@ -5,6 +5,7 @@ import { requireWorkspace, requireRole } from '../middleware/workspace.js';
 import { validateBody } from '../middleware/validate.js';
 import * as workspaces from '../db/workspaces.js';
 import brandRoutes from './brands.js';
+import categoryRoutes from './categories.js';
 
 const router = express.Router();
 
@@ -40,5 +41,6 @@ router.delete('/:workspaceId', requireWorkspace, requireRole('owner'), async (re
 
 // tenant owned resources live under /workspaces/:workspaceId/
 router.use('/:workspaceId/brands', requireWorkspace, brandRoutes);
+router.use('/:workspaceId/categories', requireWorkspace, categoryRoutes);
 
 export default router;

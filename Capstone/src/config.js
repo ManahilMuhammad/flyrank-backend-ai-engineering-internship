@@ -11,6 +11,8 @@ export const env = {
     // separate variable so it doesn't clash with BE-04 database url in shared env
     databaseUrl: process.env.PRIORS_DATABASE_URL || 'postgresql://postgres:password@localhost:5433/priors',
     geminiApiKey: process.env.GEMINI_API_KEY,
+    // model for query generation and classification; overridable without code changes
+    geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     supabaseUrl: process.env.SUPABASE_URL,
     supabaseKey: process.env.SUPABASE_KEY,
     smtpHost: process.env.SMTP_HOST || 'localhost',
