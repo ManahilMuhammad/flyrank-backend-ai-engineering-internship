@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { validateBody, uuid } from '../middleware/validate.js';
 import * as harvests from '../db/harvests.js';
+import * as influence from '../db/influence.js';
 import { assertConfigured } from '../lib/gemini.js';
 import { enqueueHarvest } from '../lib/jobs.js';
 import { env } from '../config.js';
@@ -17,6 +18,35 @@ const createRunBody = z.object({
 }).strict();
 
 const answersFilter = z.object({ query_id: uuid.optional() });
+
+const limit = z.coerce.number().int().min(1).max(200).default(40);
+const sourcesFilter = z.object({ limit, group_by: z.enum(['url', 'domain']).default('url') });
+const graphFilter = z.object({
+    limit,
+    // pairs seen together only once are mostly sampling noise
+    min_together: z.coerce.number().int().min(1).default(2)
+});
+
+// parse req.query or answer 400 with each problem
+function parseQuery(schema, req, res) {
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+        res.status(400).json({
+            error: 'Invalid query parameters',
+            details: result.error.issues.map(i => ({ path: i.path.join('.'), message: i.message }))
+        });
+        return null;
+    }
+    return result.data;
+}
+
+// influence only exists once a run has completed (scored at the end of the harvest)
+function requireCompleted(req, res, next) {
+    if (req.run.status !== 'completed') {
+        return res.status(409).json({ error: `Run is ${req.run.status}; influence is available once it completes` });
+    }
+    next();
+}
 
 // loads runId within current category and sets req.run
 async function requireRun(req, res, next) {
@@ -73,6 +103,30 @@ router.get('/:runId/answers', requireRun, async (req, res) => {
     const filter = answersFilter.safeParse(req.query);
     if (!filter.success) return res.status(400).json({ error: 'query_id must be a UUID' });
     res.json(await harvests.listAnswers(req.run.id, { queryId: filter.data.query_id }));
+});
+
+// sources ranked by influence
+router.get('/:runId/sources', requireRun, requireCompleted, async (req, res) => {
+    const query = parseQuery(sourcesFilter, req, res);
+    if (!query) return;
+
+    const sources = query.group_by === 'domain'
+        ? await influence.listTopDomains(req.run.id, query.limit)
+        : await influence.listTopSources(req.run.id, query.limit);
+    res.json({ run_id: req.run.id, answers: req.run.stats.answers, group_by: query.group_by, sources });
+});
+
+// top sources as nodes
+// plus which get cited in same answer
+router.get('/:runId/graph', requireRun, requireCompleted, async (req, res) => {
+    const query = parseQuery(graphFilter, req, res);
+    if (!query) return;
+
+    const [nodes, edges] = await Promise.all([
+        influence.listTopSources(req.run.id, query.limit),
+        influence.listCoCitations(req.run.id, query.limit, query.min_together)
+    ]);
+    res.json({ run_id: req.run.id, answers: req.run.stats.answers, nodes, edges });
 });
 
 export default router;

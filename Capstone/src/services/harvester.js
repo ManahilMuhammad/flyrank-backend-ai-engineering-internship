@@ -1,6 +1,7 @@
 import { generateGrounded } from '../lib/gemini.js';
 import { withTransaction } from '../db/pool.js';
 import * as harvests from '../db/harvests.js';
+import { scoreRun } from '../db/influence.js';
 import { env } from '../config.js';
 import { mentionsAny } from '../lib/text.js';
 import { canonicalizeUrl, domainOf, sourceTypeFor } from '../lib/urls.js';
@@ -164,6 +165,10 @@ export async function runHarvest(runId, { signal, minIntervalMs = env.harvestMin
     if (!fatalError && totals.answers === 0 && counts.calls_failed > 0) {
         fatalError = `Every call failed (${counts.calls_failed}), no answers stored`;
     }
+
+    // scored before being marked completed
+    // so completed run always has influence ranking
+    if (!fatalError) await scoreRun(runId);
 
     await harvests.finishRun(runId, { status: fatalError ? 'failed' : 'completed', stats, error: fatalError });
     console.log(`Harvest ${runId} ${fatalError ? 'failed' : 'completed'}: ${totals.answers} answers, ` +
