@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { normalize, mentionsAny, cleanGroups } from '../src/services/queryGenerator.js';
+import { cleanGroups } from '../src/services/queryGenerator.js';
+import { normalize, mentionsAny } from '../src/lib/text.js';
 
 // pure functions only: no database, no LLM
 

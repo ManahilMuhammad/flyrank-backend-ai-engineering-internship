@@ -4,6 +4,7 @@ import { validateBody, uuid } from '../middleware/validate.js';
 import * as categories from '../db/categories.js';
 import { getBrand } from '../db/brands.js';
 import queryRoutes from './queries.js';
+import harvestRoutes from './harvests.js';
 
 // mounted under /workspaces/:workspaceId/categories 
 // after requireWorkspace so req.workspace is set
@@ -71,5 +72,6 @@ router.delete('/:categoryId', requireCategory, async (req, res) => {
 });
 
 router.use('/:categoryId/queries', requireCategory, queryRoutes);
+router.use('/:categoryId/runs', requireCategory, harvestRoutes);
 
 export default router;

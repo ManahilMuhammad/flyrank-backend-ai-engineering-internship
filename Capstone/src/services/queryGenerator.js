@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { generateJson } from '../lib/gemini.js';
 import { httpError } from '../lib/errors.js';
+import { normalize, mentionsAny } from '../lib/text.js';
 
 export const PROMPT_VERSION = 'querygen-v1';
 
@@ -72,17 +73,6 @@ Across all groups:
 Hard rules:
 - do NOT name any specific company, product or brand in any question; ask about the category, not a vendor
 - no two questions may be near-duplicates of each other`;
-}
-
-// lowercase, strip punctuation, collapse whitespace
-export function normalize(text) {
-    return text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
-}
-
-// whole word match on normalised text
-export function mentionsAny(text, terms) {
-    const padded = ` ${normalize(text)} `;
-    return terms.map(normalize).filter(Boolean).some(term => padded.includes(` ${term} `));
 }
 
 // turn raw llm groups into clean list

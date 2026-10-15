@@ -34,7 +34,8 @@ async function withRetry(fn, { attempts = 4, baseDelayMs = 2000 } = {}) {
 function toHttpError(err) {
     if (err.expose) return err;
     if (err.status === 429) return httpError(429, 'LLM rate limit reached, try again in a minute');
-    if (err.status === 400 || err.status === 401 || err.status === 403) {
+    // 404 = unknown or retired model name
+    if (err.status === 400 || err.status === 401 || err.status === 403 || err.status === 404) {
         console.error('Gemini rejected the request: ', err.message);
         return httpError(502, 'LLM request was rejected (check GEMINI_API_KEY and GEMINI_MODEL)');
     }
@@ -42,7 +43,39 @@ function toHttpError(err) {
     return httpError(502, 'LLM request failed');
 }
 
-// ask for JSON matching JSON Schema
+// lets callers refuse up front 
+// instead of failing later in background job
+export function assertConfigured() {
+    getClient();
+}
+
+// ask question like a user would with google search grounding on
+// returns { text, chunks: [{ uri, title }], supports: [{ chunkIndices, length }], searchQueries, model }
+// chunk uris are vertexaisearch redirect links not real page urls
+export async function generateGrounded(prompt) {
+    const response = await withRetry(() => getClient().models.generateContent({
+        model: env.geminiModel,
+        contents: prompt,
+        config: { tools: [{ googleSearch: {} }] }
+    }));
+
+    const metadata = response.candidates?.[0]?.groundingMetadata ?? {};
+    return {
+        text: response.text ?? '',
+        chunks: (metadata.groundingChunks ?? [])
+            .map(chunk => ({ uri: chunk.web?.uri, title: chunk.web?.title ?? null })),
+        supports: (metadata.groundingSupports ?? []).map(support => ({
+            chunkIndices: support.groundingChunkIndices ?? [],
+            // indices are utf-8 byte offsets so prefer segment text when present
+            length: support.segment?.text?.length
+                ?? Math.max(0, (support.segment?.endIndex ?? 0) - (support.segment?.startIndex ?? 0))
+        })),
+        searchQueries: metadata.webSearchQueries ?? [],
+        model: env.geminiModel
+    };
+}
+
+// ask for json matching json schema
 // returns { data, model }
 export async function generateJson({ prompt, systemInstruction, schema, temperature = 0.7 }) {
     const response = await withRetry(() => getClient().models.generateContent({
