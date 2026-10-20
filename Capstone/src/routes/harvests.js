@@ -4,7 +4,10 @@ import { validateBody, uuid } from '../middleware/validate.js';
 import * as harvests from '../db/harvests.js';
 import * as influence from '../db/influence.js';
 import { assertConfigured } from '../lib/gemini.js';
-import { enqueueHarvest, enqueueFetch } from '../lib/jobs.js';
+import * as standings from '../db/standings.js';
+import { enqueueHarvest, enqueueFetch, enqueueAudit } from '../lib/jobs.js';
+import { isOwnedDomain } from '../lib/urls.js';
+import { STANCES } from '../services/standingAuditor.js';
 import { env } from '../config.js';
 
 // mounted under /workspaces/:workspaceId/categories/:categoryId/runs
@@ -21,6 +24,11 @@ const answersFilter = z.object({ query_id: uuid.optional() });
 
 const limit = z.coerce.number().int().min(1).max(200).default(40);
 const sourcesFilter = z.object({ limit, group_by: z.enum(['url', 'domain']).default('url') });
+const standingsFilter = z.object({
+    limit,
+    stance: z.enum(STANCES).optional(),
+    stale: z.enum(['true', 'false']).transform(v => v === 'true').optional()
+});
 const graphFilter = z.object({
     limit,
     // pairs seen together only once are mostly sampling noise
@@ -125,6 +133,33 @@ router.post('/:runId/fetch', requireRun, async (req, res) => {
     }
     const jobId = await enqueueFetch(req.run.id);
     if (!jobId) return res.status(409).json({ error: 'A fetch for this run is already queued or running' });
+    res.status(202).json({ run_id: req.run.id, queued: true });
+});
+
+// how each of run's top sources describes brand in influence order
+router.get('/:runId/standings', requireRun, requireCompleted, async (req, res) => {
+    const query = parseQuery(standingsFilter, req, res);
+    if (!query) return;
+
+    const brand = await standings.getRunBrand(req.run.id);
+    const rows = await standings.listRunStandings(req.run.id, query);
+    res.json({
+        run_id: req.run.id,
+        brand: { id: brand.id, name: brand.name },
+        audit: req.run.stats.audit ?? null,
+        standings: rows.map(r => ({ ...r, owned: isOwnedDomain(r.domain, brand.domains) }))
+    });
+});
+
+// re-/audit run's fetched sources normally queued automatically after fetch
+// pages already audited under current prompt version reused not re-sent to llm
+router.post('/:runId/audit', requireRun, async (req, res) => {
+    if (req.run.status !== 'completed') {
+        return res.status(409).json({ error: `Run is ${req.run.status}; sources can be audited once it completes` });
+    }
+    assertConfigured();
+    const jobId = await enqueueAudit(req.run.id);
+    if (!jobId) return res.status(409).json({ error: 'An audit for this run is already queued or running' });
     res.status(202).json({ run_id: req.run.id, queued: true });
 });
 

@@ -42,9 +42,16 @@ const SOURCE_TYPES = {
     video: ['youtube.com', 'youtu.be', 'vimeo.com', 'tiktok.com']
 };
 
+const onDomain = (domain, d) => domain === d || domain.endsWith(`.${d}`);
+
 export function sourceTypeFor(domain) {
     for (const [type, domains] of Object.entries(SOURCE_TYPES)) {
-        if (domains.some(d => domain === d || domain.endsWith(`.${d}`))) return type;
+        if (domains.some(d => onDomain(domain, d))) return type;
     }
     return null;
+}
+
+// page on one of brand's own sites (subdomains included)
+export function isOwnedDomain(domain, brandDomains) {
+    return brandDomains.some(d => onDomain(domain, d));
 }

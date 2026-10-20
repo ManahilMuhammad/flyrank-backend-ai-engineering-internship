@@ -3,12 +3,14 @@ import { env } from '../config.js';
 import { finishRun } from '../db/harvests.js';
 import { runHarvest } from '../services/harvester.js';
 import { fetchRunSources } from '../services/sourceFetcher.js';
+import { auditRunSources } from '../services/standingAuditor.js';
 
 // background jobs live in postgres so queued harvests survive restarts
-// harvest -> fetch sources (each step queues next after succeeding)
+// harvest -> fetch sources -> audit standings (each step queues next after succeeding)
 
 export const HARVEST_QUEUE = 'harvest';
 export const FETCH_QUEUE = 'fetch-sources';
+export const AUDIT_QUEUE = 'audit-standings';
 const HARVEST_RETRY_LIMIT = 2;
 
 let boss = null;
@@ -50,8 +52,22 @@ export async function startJobs() {
         if (status === 'completed') await enqueueFetch(job.data.runId);
     });
 
+    // one queued or active audit per run 
+    // run's audit can take time on paced llm calls
+    await boss.createQueue(AUDIT_QUEUE, {
+        policy: 'exclusive',
+        expireInSeconds: 2 * 60 * 60,
+        retryLimit: 1,
+        retryDelay: 60
+    });
+
     await boss.work(FETCH_QUEUE, async ([job]) => {
         await fetchRunSources(job.data.runId);
+        await enqueueAudit(job.data.runId);
+    });
+
+    await boss.work(AUDIT_QUEUE, async ([job]) => {
+        await auditRunSources(job.data.runId);
     });
 }
 
@@ -64,6 +80,12 @@ export async function enqueueHarvest(runId) {
 export async function enqueueFetch(runId) {
     if (!boss) throw new Error('Job queue is not started');
     return boss.send(FETCH_QUEUE, { runId }, { singletonKey: runId });
+}
+
+// returns null when audit already queued or running
+export async function enqueueAudit(runId) {
+    if (!boss) throw new Error('Job queue is not started');
+    return boss.send(AUDIT_QUEUE, { runId }, { singletonKey: runId });
 }
 
 export async function stopJobs() {

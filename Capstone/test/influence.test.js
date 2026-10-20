@@ -16,7 +16,7 @@ vi.mock('../src/lib/gemini.js', () => ({
     generateGrounded: vi.fn(),
     assertConfigured: vi.fn()
 }));
-vi.mock('../src/lib/jobs.js', () => ({ enqueueHarvest: vi.fn(async () => 'job-id'), enqueueFetch: vi.fn(async () => 'job-id') }));
+vi.mock('../src/lib/jobs.js', () => ({ enqueueHarvest: vi.fn(async () => 'job-id'), enqueueFetch: vi.fn(async () => 'job-id'), enqueueAudit: vi.fn(async () => 'job-id') }));
 
 const { generateGrounded } = await import('../src/lib/gemini.js');
 const { runHarvest } = await import('../src/services/harvester.js');

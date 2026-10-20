@@ -3,13 +3,13 @@ import { pool } from './pool.js';
 // every query takes workspaceId and filters on it 
 // so brand id from another workspace not found
 
-const COLUMNS = 'id, workspace_id, name, aliases, fact_sheet, created_at, updated_at';
+const COLUMNS = 'id, workspace_id, name, aliases, domains, fact_sheet, created_at, updated_at';
 
-export async function createBrand(workspaceId, { name, aliases, fact_sheet }) {
+export async function createBrand(workspaceId, { name, aliases, domains = [], fact_sheet }) {
     const { rows } = await pool.query(
-        `INSERT INTO brands (workspace_id, name, aliases, fact_sheet)
-         VALUES ($1, $2, $3, $4) RETURNING ${COLUMNS}`,
-        [workspaceId, name, aliases, fact_sheet]
+        `INSERT INTO brands (workspace_id, name, aliases, domains, fact_sheet)
+         VALUES ($1, $2, $3, $4, $5) RETURNING ${COLUMNS}`,
+        [workspaceId, name, aliases, domains, fact_sheet]
     );
     return rows[0];
 }
@@ -32,7 +32,7 @@ export async function getBrand(workspaceId, brandId) {
 
 // only the fields present in fields changed
 export async function updateBrand(workspaceId, brandId, fields) {
-    const allowed = ['name', 'aliases', 'fact_sheet'];
+    const allowed = ['name', 'aliases', 'domains', 'fact_sheet'];
     const sets = [];
     const values = [workspaceId, brandId];
 

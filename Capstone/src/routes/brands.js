@@ -13,6 +13,12 @@ const brandFields = {
     name: z.string().trim().min(1).max(100),
     // up to 20 other names the brand appears as e.g. 'FlyRank AI' & 'flyrank.ai'
     aliases: z.array(z.string().trim().min(1).max(100)).max(20),
+    // sites brand owns e.g. 'flyrank.ai' own pages not audited as third party sources
+    domains: z.array(
+        z.string().trim().toLowerCase()
+            .transform(d => d.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, ''))
+            .pipe(z.string().regex(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/, 'must be a domain like flyrank.ai'))
+    ).max(20),
     // for staleness checks
     fact_sheet: z.record(z.unknown()).refine(
         v => JSON.stringify(v).length <= MAX_FACT_SHEET_CHARS,
@@ -23,12 +29,13 @@ const brandFields = {
 const createBrandBody = z.object({
     name: brandFields.name,
     aliases: brandFields.aliases.default([]),
+    domains: brandFields.domains.default([]),
     fact_sheet: brandFields.fact_sheet.default({})
 }).strict();
 
 const updateBrandBody = z.object(brandFields).partial().strict().refine(
     v => Object.keys(v).length > 0,
-    'Provide at least one of: name, aliases, fact_sheet'
+    'Provide at least one of: name, aliases, domains, fact_sheet'
 );
 
 router.post('/', validateBody(createBrandBody), async (req, res) => {
