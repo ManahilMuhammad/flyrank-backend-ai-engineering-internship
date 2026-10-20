@@ -87,15 +87,16 @@ async function harvestSample({ run, query, sampleN, brandTerms, counts }) {
 
 // execute queued run: every active query x samples_per_query grounded calls
 // calls go sample by sample so runs cut short still cover every query
+// returns the run's final status, or null if there was nothing to do
 export async function runHarvest(runId, { signal, minIntervalMs = env.harvestMinIntervalMs, rateLimitPauseMs = 60_000 } = {}) {
     const run = await harvests.getRunForWorker(runId);
     if (!run) {
         console.warn(`Harvest ${runId} no longer exists, skipping`);
-        return;
+        return null;
     }
     if (!(await harvests.markRunning(runId))) {
         console.warn(`Harvest ${runId} is already ${run.status}, skipping`);
-        return;
+        return null;
     }
 
     const startedAt = run.started_at ?? new Date();
@@ -170,7 +171,9 @@ export async function runHarvest(runId, { signal, minIntervalMs = env.harvestMin
     // so completed run always has influence ranking
     if (!fatalError) await scoreRun(runId);
 
-    await harvests.finishRun(runId, { status: fatalError ? 'failed' : 'completed', stats, error: fatalError });
-    console.log(`Harvest ${runId} ${fatalError ? 'failed' : 'completed'}: ${totals.answers} answers, ` +
+    const status = fatalError ? 'failed' : 'completed';
+    await harvests.finishRun(runId, { status, stats, error: fatalError });
+    console.log(`Harvest ${runId} ${status}: ${totals.answers} answers, ` +
         `${totals.unique_sources} sources, ${counts.calls_failed} failed calls`);
+    return status;
 }

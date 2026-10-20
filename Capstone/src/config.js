@@ -16,6 +16,10 @@ export const env = {
     geminiModel: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
     // gap between grounded calls in a harvest; 7s keeps under a 10 requests/minute free tier
     harvestMinIntervalMs: Number(process.env.HARVEST_MIN_INTERVAL_MS ?? 7000),
+    // how many of run's top sources get fetched and audited
+    fetchTopN: Number(process.env.FETCH_TOP_N ?? 40),
+    // page checked more recently than this not fetched again (runs are weekly)
+    fetchTtlHours: Number(process.env.FETCH_TTL_HOURS ?? 144),
     supabaseUrl: process.env.SUPABASE_URL,
     supabaseKey: process.env.SUPABASE_KEY,
     smtpHost: process.env.SMTP_HOST || 'localhost',

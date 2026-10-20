@@ -4,7 +4,7 @@ import { validateBody, uuid } from '../middleware/validate.js';
 import * as harvests from '../db/harvests.js';
 import * as influence from '../db/influence.js';
 import { assertConfigured } from '../lib/gemini.js';
-import { enqueueHarvest } from '../lib/jobs.js';
+import { enqueueHarvest, enqueueFetch } from '../lib/jobs.js';
 import { env } from '../config.js';
 
 // mounted under /workspaces/:workspaceId/categories/:categoryId/runs
@@ -114,6 +114,18 @@ router.get('/:runId/sources', requireRun, requireCompleted, async (req, res) => 
         ? await influence.listTopDomains(req.run.id, query.limit)
         : await influence.listTopSources(req.run.id, query.limit);
     res.json({ run_id: req.run.id, answers: req.run.stats.answers, group_by: query.group_by, sources });
+});
+
+// fetch (or re-check) run's top sources
+// normally queued automatically when harvest completes
+// pages checked recently skipped, unchanged pages keep snapshot
+router.post('/:runId/fetch', requireRun, async (req, res) => {
+    if (req.run.status !== 'completed') {
+        return res.status(409).json({ error: `Run is ${req.run.status}; sources can be fetched once it completes` });
+    }
+    const jobId = await enqueueFetch(req.run.id);
+    if (!jobId) return res.status(409).json({ error: 'A fetch for this run is already queued or running' });
+    res.status(202).json({ run_id: req.run.id, queued: true });
 });
 
 // top sources as nodes

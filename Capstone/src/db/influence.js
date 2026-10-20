@@ -32,8 +32,12 @@ export async function scoreRun(runId) {
 export async function listTopSources(runId, limit) {
     const { rows } = await pool.query(
         `SELECT ss.rank, s.id AS source_id, s.url_canonical AS url, s.domain, s.source_type, s.title,
-                ss.influence, ss.citation_rate, ss.citation_count, ss.query_count
-         FROM source_scores ss JOIN sources s ON s.id = ss.source_id
+                ss.influence, ss.citation_rate, ss.citation_count, ss.query_count,
+                -- null until the source has been fetched for this run
+                sn.fetch_status, sn.checked_at AS fetch_checked_at, sn.error AS fetch_error
+         FROM source_scores ss
+         JOIN sources s ON s.id = ss.source_id
+         LEFT JOIN source_snapshots sn ON sn.id = ss.snapshot_id
          WHERE ss.run_id = $1
          ORDER BY ss.rank
          LIMIT $2`,
