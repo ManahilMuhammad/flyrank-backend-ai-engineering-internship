@@ -21,7 +21,8 @@
     { "name": "Harvests", "description": "A run asks Gemini every active query several times with Google Search grounding and records which pages each answer was built from." },
     { "name": "Influence", "description": "Which sources a completed run's answers were built from, ranked by influence, and which get cited together." },
     { "name": "Sources", "description": "Fetching and caching the pages a run cites, so their text can be audited." },
-    { "name": "Standings", "description": "How each top source describes the brand: stance, staleness against the fact sheet, and a verbatim quote as evidence." }
+    { "name": "Standings", "description": "How each top source describes the brand: stance, staleness against the fact sheet, and a verbatim quote as evidence." },
+    { "name": "Leverage", "description": "The ranked action list (influence x deficit) and the run's headline numbers." }
   ],
   "components": {
     "securitySchemes": {
@@ -330,12 +331,64 @@
                   "duration_seconds": { "type": "integer" },
                   "finished_at": { "type": "string", "format": "date-time" }
                 }
-              }
+              },
+              "headline": { "$ref": "#/components/schemas/Headline" }
             }
           },
           "created_at": { "type": "string", "format": "date-time" },
           "started_at": { "type": "string", "format": "date-time", "nullable": true },
           "finished_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "Headline": {
+        "type": "object",
+        "description": "Set once the run has been audited. Rates are 0-1; null when there is nothing to divide by.",
+        "properties": {
+          "answers": { "type": "integer" },
+          "brand_mention_rate": { "type": "number", "nullable": true, "description": "Share of answers that name the brand" },
+          "owned_citation_rate": { "type": "number", "nullable": true, "description": "Share of answers grounded in one of the brand's own pages" },
+          "grounded_answer_rate": { "type": "number", "nullable": true, "description": "Share of answers that cited any page" },
+          "sources": { "type": "integer", "description": "Distinct pages cited in the run" },
+          "top5_concentration": { "type": "number", "nullable": true, "description": "Share of all influence held by the 5 most influential pages" },
+          "owned_influence_share": { "type": "number", "nullable": true, "description": "Share of all influence held by the brand's own pages" },
+          "audit_coverage": { "type": "number", "nullable": true, "description": "Share of the top third-party sources' influence that has a verdict" },
+          "stance_mix": {
+            "type": "object",
+            "description": "Of the audited third-party influence, the share describing the brand each way",
+            "properties": {
+              "absent": { "type": "number", "nullable": true },
+              "neutral": { "type": "number", "nullable": true },
+              "favorable": { "type": "number", "nullable": true },
+              "unfavorable": { "type": "number", "nullable": true }
+            }
+          },
+          "stale_share": { "type": "number", "nullable": true, "description": "Of the audited influence, the share on pages with stale facts" },
+          "total_leverage": { "type": "number", "description": "Sum of leverage over audited sources" }
+        }
+      },
+      "LeverageAction": {
+        "type": "object",
+        "properties": {
+          "leverage_rank": { "type": "integer" },
+          "rank": { "type": "integer", "description": "Influence rank" },
+          "source_id": { "type": "string", "format": "uuid" },
+          "url": { "type": "string" },
+          "domain": { "type": "string" },
+          "source_type": { "type": "string", "nullable": true },
+          "title": { "type": "string", "nullable": true },
+          "influence": { "type": "number" },
+          "citation_rate": { "type": "number" },
+          "query_count": { "type": "integer" },
+          "deficit": { "type": "number", "description": "absent 1.0, unfavorable 0.9, neutral 0.4, favorable 0; at least 0.8 when stale" },
+          "leverage": { "type": "number", "description": "influence x deficit" },
+          "action": { "type": "string", "enum": ["correct_stale_info", "get_included", "address_criticism", "improve_mention"] },
+          "stance": { "type": "string", "enum": ["absent", "neutral", "favorable", "unfavorable"] },
+          "is_stale": { "type": "boolean" },
+          "stale_reason": { "type": "string", "nullable": true },
+          "evidence_passage": { "type": "string", "nullable": true },
+          "confidence": { "type": "number" },
+          "fetch_status": { "type": "string" },
+          "audit_note": { "type": "string", "nullable": true }
         }
       },
       "SourceInfluence": {
@@ -1314,6 +1367,70 @@
           },
           "503": {
             "description": "LLM not configured (GEMINI_API_KEY missing)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/categories/{categoryId}/runs/{runId}/leverage": {
+      "parameters": [
+        { "$ref": "#/components/parameters/workspaceId" },
+        { "$ref": "#/components/parameters/categoryId" },
+        { "$ref": "#/components/parameters/runId" }
+      ],
+      "get": {
+        "summary": "Ranked action list and headline numbers",
+        "description": "Third-party sources with something to fix, ranked by leverage = influence x deficit, each with the fix (`action`) and the page's own words as evidence. The brand's own pages and pages that already describe it well are left out. `unaudited` lists top sources with no verdict (blocked, unreadable, rejected) by influence, so a large source that couldn't be read is still visible.",
+        "operationId": "getRunLeverage",
+        "tags": ["Leverage"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 40 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Action list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "run_id": { "type": "string", "format": "uuid" },
+                    "brand": {
+                      "type": "object",
+                      "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" } }
+                    },
+                    "headline": { "$ref": "#/components/schemas/Headline" },
+                    "actions": { "type": "array", "items": { "$ref": "#/components/schemas/LeverageAction" } },
+                    "unaudited": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rank": { "type": "integer" },
+                          "source_id": { "type": "string", "format": "uuid" },
+                          "url": { "type": "string" },
+                          "domain": { "type": "string" },
+                          "source_type": { "type": "string", "nullable": true },
+                          "title": { "type": "string", "nullable": true },
+                          "influence": { "type": "number" },
+                          "citation_rate": { "type": "number" },
+                          "query_count": { "type": "integer" },
+                          "fetch_status": { "type": "string", "nullable": true },
+                          "audit_note": { "type": "string", "nullable": true }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": {
+            "description": "Run has not completed or has not been audited yet",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
           }
         }

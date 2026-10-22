@@ -5,6 +5,7 @@ import * as harvests from '../db/harvests.js';
 import * as influence from '../db/influence.js';
 import { assertConfigured } from '../lib/gemini.js';
 import * as standings from '../db/standings.js';
+import * as leverage from '../db/leverage.js';
 import { enqueueHarvest, enqueueFetch, enqueueAudit } from '../lib/jobs.js';
 import { isOwnedDomain } from '../lib/urls.js';
 import { STANCES } from '../services/standingAuditor.js';
@@ -29,6 +30,7 @@ const standingsFilter = z.object({
     stance: z.enum(STANCES).optional(),
     stale: z.enum(['true', 'false']).transform(v => v === 'true').optional()
 });
+const leverageFilter = z.object({ limit });
 const graphFilter = z.object({
     limit,
     // pairs seen together only once are mostly sampling noise
@@ -161,6 +163,37 @@ router.post('/:runId/audit', requireRun, async (req, res) => {
     const jobId = await enqueueAudit(req.run.id);
     if (!jobId) return res.status(409).json({ error: 'An audit for this run is already queued or running' });
     res.status(202).json({ run_id: req.run.id, queued: true });
+});
+
+// ranked action list: where improving brand's standing moves most answer influence
+// plus run's headline numbers and top sources that couldnt be audited
+router.get('/:runId/leverage', requireRun, requireCompleted, async (req, res) => {
+    const query = parseQuery(leverageFilter, req, res);
+    if (!query) return;
+    if (!req.run.stats.headline) {
+        return res.status(409).json({ error: 'Run has not been audited yet; leverage is available once the audit finishes' });
+    }
+
+    const brand = await standings.getRunBrand(req.run.id);
+    const [actions, unaudited] = await Promise.all([
+        leverage.listActions(req.run.id, query.limit),
+        leverage.listUnaudited(req.run.id, env.fetchTopN)
+    ]);
+    res.json({
+        run_id: req.run.id,
+        brand: { id: brand.id, name: brand.name },
+        headline: req.run.stats.headline,
+        actions,
+        // owned pages are brand's own, not something to pitch
+        // no verdict means no deficit to show
+        unaudited: unaudited
+            .filter(r => !isOwnedDomain(r.domain, brand.domains))
+            .map(r => ({
+                rank: r.rank, source_id: r.source_id, url: r.url, domain: r.domain, source_type: r.source_type,
+                title: r.title, influence: r.influence, citation_rate: r.citation_rate, query_count: r.query_count,
+                fetch_status: r.fetch_status, audit_note: r.audit_note
+            }))
+    });
 });
 
 // top sources as nodes

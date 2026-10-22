@@ -5,6 +5,7 @@ import { mentionsAny } from '../lib/text.js';
 import { isOwnedDomain } from '../lib/urls.js';
 import { findVerbatim } from '../lib/evidence.js';
 import * as standings from '../db/standings.js';
+import { scoreLeverage } from './leverage.js';
 
 // bump when prompt or rules change 
 // old verdicts stay, new runs re-audit under new version
@@ -239,5 +240,8 @@ export async function auditRunSources(runId, { topN = env.fetchTopN, minInterval
     };
     await standings.saveAuditStats(runId, stats);
     console.log(`Audit for run ${runId}: ${JSON.stringify(counts)}`);
+
+    // verdicts are in so action list and headline can be scored
+    await scoreLeverage(runId, { topN });
     return stats;
 }
