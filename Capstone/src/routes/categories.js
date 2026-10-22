@@ -5,6 +5,7 @@ import * as categories from '../db/categories.js';
 import { getBrand } from '../db/brands.js';
 import queryRoutes from './queries.js';
 import harvestRoutes from './harvests.js';
+import { listCategoryShifts } from '../db/shifts.js';
 
 // mounted under /workspaces/:workspaceId/categories 
 // after requireWorkspace so req.workspace is set
@@ -13,19 +14,28 @@ const router = express.Router({ mergeParams: true });
 const categoryFields = {
     name: z.string().trim().min(1).max(100),
     // fed to query generator so context improves query set
-    description: z.string().trim().max(1000).nullable()
+    description: z.string().trim().max(1000).nullable(),
+    // opt in to weekly re-harvest (each run spends llm quota)
+    weekly_harvest: z.boolean()
 };
 
 const createCategoryBody = z.object({
     brand_id: uuid,
     name: categoryFields.name,
-    description: categoryFields.description.optional()
+    description: categoryFields.description.optional(),
+    weekly_harvest: categoryFields.weekly_harvest.optional()
 }).strict();
 
 const updateCategoryBody = z.object(categoryFields).partial().strict().refine(
     v => Object.keys(v).length > 0,
-    'Provide at least one of: name, description'
+    'Provide at least one of: name, description, weekly_harvest'
 );
+
+const SHIFT_TYPES = ['source_entered', 'source_exited', 'standing_changed', 'citation_rate_changed'];
+const shiftsFilter = z.object({
+    type: z.enum(SHIFT_TYPES).optional(),
+    limit: z.coerce.number().int().min(1).max(500).default(100)
+});
 
 // loads categoryId within current workspace and sets req.category
 export async function requireCategory(req, res, next) {
@@ -69,6 +79,18 @@ router.patch('/:categoryId', requireCategory, validateBody(updateCategoryBody), 
 router.delete('/:categoryId', requireCategory, async (req, res) => {
     await categories.deleteCategory(req.workspace.id, req.category.id);
     res.status(204).send();
+});
+
+// alert feed: how category's cited sources and brand's standing moved between runs
+router.get('/:categoryId/shifts', requireCategory, async (req, res) => {
+    const filter = shiftsFilter.safeParse(req.query);
+    if (!filter.success) {
+        return res.status(400).json({
+            error: 'Invalid query parameters',
+            details: filter.error.issues.map(i => ({ path: i.path.join('.'), message: i.message }))
+        });
+    }
+    res.json(await listCategoryShifts(req.category.id, filter.data));
 });
 
 router.use('/:categoryId/queries', requireCategory, queryRoutes);

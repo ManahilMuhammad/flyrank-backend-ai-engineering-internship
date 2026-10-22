@@ -2,14 +2,14 @@ import { pool } from './pool.js';
 
 // every query takes workspaceId and filters on it, same as brands
 
-const COLUMNS = `c.id, c.workspace_id, c.brand_id, c.name, c.description, c.created_at,
+const COLUMNS = `c.id, c.workspace_id, c.brand_id, c.name, c.description, c.weekly_harvest, c.created_at,
     (SELECT count(*)::int FROM queries q WHERE q.category_id = c.id AND q.active) AS active_query_count`;
 
-export async function createCategory(workspaceId, { brand_id, name, description }) {
+export async function createCategory(workspaceId, { brand_id, name, description, weekly_harvest = false }) {
     const { rows } = await pool.query(
-        `INSERT INTO categories (workspace_id, brand_id, name, description)
-         VALUES ($1, $2, $3, $4) RETURNING id`,
-        [workspaceId, brand_id, name, description ?? null]
+        `INSERT INTO categories (workspace_id, brand_id, name, description, weekly_harvest)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [workspaceId, brand_id, name, description ?? null, weekly_harvest]
     );
     return getCategory(workspaceId, rows[0].id);
 }
@@ -32,7 +32,7 @@ export async function getCategory(workspaceId, categoryId) {
 
 // only the fields present in `fields` are changed (brand_id is fixed once created)
 export async function updateCategory(workspaceId, categoryId, fields) {
-    const allowed = ['name', 'description'];
+    const allowed = ['name', 'description', 'weekly_harvest'];
     const sets = [];
     const values = [workspaceId, categoryId];
 

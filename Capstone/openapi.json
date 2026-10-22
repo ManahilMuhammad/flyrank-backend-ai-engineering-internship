@@ -22,7 +22,8 @@
     { "name": "Influence", "description": "Which sources a completed run's answers were built from, ranked by influence, and which get cited together." },
     { "name": "Sources", "description": "Fetching and caching the pages a run cites, so their text can be audited." },
     { "name": "Standings", "description": "How each top source describes the brand: stance, staleness against the fact sheet, and a verbatim quote as evidence." },
-    { "name": "Leverage", "description": "The ranked action list (influence x deficit) and the run's headline numbers." }
+    { "name": "Leverage", "description": "The ranked action list (influence x deficit) and the run's headline numbers." },
+    { "name": "Shifts", "description": "Week-over-week changes: sources entering or leaving the answers, citation rate moves, and pages whose verdict changed. Runs weekly for categories with weekly_harvest on." }
   ],
   "components": {
     "securitySchemes": {
@@ -188,15 +189,41 @@
             "maxLength": 1000,
             "description": "Given to the query generator as context",
             "example": "Software and agencies that help brands get cited and recommended by AI assistants like ChatGPT, Gemini and Perplexity"
+          },
+          "weekly_harvest": {
+            "type": "boolean",
+            "default": false,
+            "description": "Re-harvest this category on the weekly schedule (HARVEST_CRON, default Mondays 06:00 UTC). Each run spends LLM quota."
           }
         }
       },
       "CategoryUpdate": {
         "type": "object",
-        "description": "name and/or description; brand_id cannot be changed",
+        "description": "Any of name, description, weekly_harvest; brand_id cannot be changed",
         "properties": {
           "name": { "type": "string" },
-          "description": { "type": "string", "nullable": true }
+          "description": { "type": "string", "nullable": true },
+          "weekly_harvest": { "type": "boolean" }
+        }
+      },
+      "ShiftEvent": {
+        "type": "object",
+        "description": "A change between a run and the category's previous audited run. Source-level events need the source cited at least 3 times and a 10-point move in citation rate; brand-level rate changes (source_id null, payload.metric set) need 5 points; standing changes have no minimum.",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "run_id": { "type": "string", "format": "uuid" },
+          "prev_run_id": { "type": "string", "format": "uuid", "nullable": true },
+          "type": { "type": "string", "enum": ["source_entered", "source_exited", "standing_changed", "citation_rate_changed"] },
+          "source_id": { "type": "string", "format": "uuid", "nullable": true, "description": "null for brand-level rate changes" },
+          "url": { "type": "string", "nullable": true },
+          "domain": { "type": "string", "nullable": true },
+          "delta": {
+            "type": "number",
+            "nullable": true,
+            "description": "Citation rate change for entered/exited/rate events; change in deficit for standing_changed (positive = worse for the brand)"
+          },
+          "payload": { "type": "object", "additionalProperties": true, "description": "Before/after values, and the evidence for standing changes" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
       "Category": {
@@ -207,6 +234,7 @@
           "brand_id": { "type": "string", "format": "uuid" },
           "name": { "type": "string" },
           "description": { "type": "string", "nullable": true },
+          "weekly_harvest": { "type": "boolean" },
           "created_at": { "type": "string", "format": "date-time" },
           "active_query_count": { "type": "integer" }
         }
@@ -332,7 +360,16 @@
                   "finished_at": { "type": "string", "format": "date-time" }
                 }
               },
-              "headline": { "$ref": "#/components/schemas/Headline" }
+              "headline": { "$ref": "#/components/schemas/Headline" },
+              "shifts": {
+                "type": "object",
+                "description": "Set once the run has been compared with the category's previous audited run",
+                "properties": {
+                  "previous_run_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "total": { "type": "integer" },
+                  "by_type": { "type": "object", "additionalProperties": { "type": "integer" } }
+                }
+              }
             }
           },
           "created_at": { "type": "string", "format": "date-time" },
@@ -882,6 +919,77 @@
           "204": { "description": "Deleted" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/categories/{categoryId}/shifts": {
+      "parameters": [
+        { "$ref": "#/components/parameters/workspaceId" },
+        { "$ref": "#/components/parameters/categoryId" }
+      ],
+      "get": {
+        "summary": "Alert feed: what moved between runs",
+        "operationId": "listCategoryShifts",
+        "tags": ["Shifts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["source_entered", "source_exited", "standing_changed", "citation_rate_changed"] } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events, newest first",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ShiftEvent" } } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/categories/{categoryId}/runs/{runId}/shifts": {
+      "parameters": [
+        { "$ref": "#/components/parameters/workspaceId" },
+        { "$ref": "#/components/parameters/categoryId" },
+        { "$ref": "#/components/parameters/runId" }
+      ],
+      "get": {
+        "summary": "What changed in this run since the previous audited one",
+        "description": "Computed automatically after the run's audit. A category's first run has nothing to compare with and has no events.",
+        "operationId": "listRunShifts",
+        "tags": ["Shifts"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Shifts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "run_id": { "type": "string", "format": "uuid" },
+                    "summary": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "The run's stats.shifts; null until it has been compared",
+                      "properties": {
+                        "previous_run_id": { "type": "string", "format": "uuid", "nullable": true },
+                        "total": { "type": "integer" },
+                        "by_type": { "type": "object", "additionalProperties": { "type": "integer" } }
+                      }
+                    },
+                    "events": { "type": "array", "items": { "$ref": "#/components/schemas/ShiftEvent" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": {
+            "description": "Run has not completed yet",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
         }
       }
     },

@@ -6,6 +6,7 @@ import * as influence from '../db/influence.js';
 import { assertConfigured } from '../lib/gemini.js';
 import * as standings from '../db/standings.js';
 import * as leverage from '../db/leverage.js';
+import { listRunShifts } from '../db/shifts.js';
 import { enqueueHarvest, enqueueFetch, enqueueAudit } from '../lib/jobs.js';
 import { isOwnedDomain } from '../lib/urls.js';
 import { STANCES } from '../services/standingAuditor.js';
@@ -163,6 +164,15 @@ router.post('/:runId/audit', requireRun, async (req, res) => {
     const jobId = await enqueueAudit(req.run.id);
     if (!jobId) return res.status(409).json({ error: 'An audit for this run is already queued or running' });
     res.status(202).json({ run_id: req.run.id, queued: true });
+});
+
+// what changed since category's previous audited run (empty for its first run)
+router.get('/:runId/shifts', requireRun, requireCompleted, async (req, res) => {
+    res.json({
+        run_id: req.run.id,
+        summary: req.run.stats.shifts ?? null, // null until run has been audited and compared
+        events: await listRunShifts(req.run.id)
+    });
 });
 
 // ranked action list: where improving brand's standing moves most answer influence

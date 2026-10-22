@@ -4,13 +4,17 @@ import { finishRun } from '../db/harvests.js';
 import { runHarvest } from '../services/harvester.js';
 import { fetchRunSources } from '../services/sourceFetcher.js';
 import { auditRunSources } from '../services/standingAuditor.js';
+import { detectShifts } from '../services/shifts.js';
+import { runScheduledHarvests } from '../services/scheduler.js';
 
 // background jobs live in postgres so queued harvests survive restarts
-// harvest -> fetch sources -> audit standings (each step queues next after succeeding)
+// weekly cron -> harvest -> fetch sources -> audit standings (+ leverage, shifts)
+// each step queues next after succeeding
 
 export const HARVEST_QUEUE = 'harvest';
 export const FETCH_QUEUE = 'fetch-sources';
 export const AUDIT_QUEUE = 'audit-standings';
+export const SCHEDULE_QUEUE = 'weekly-harvest';
 const HARVEST_RETRY_LIMIT = 2;
 
 let boss = null;
@@ -66,9 +70,25 @@ export async function startJobs() {
         await enqueueAudit(job.data.runId);
     });
 
+    // audit also scores leverage
+    // run complete enough to compare with last week's
     await boss.work(AUDIT_QUEUE, async ([job]) => {
         await auditRunSources(job.data.runId);
+        await detectShifts(job.data.runId);
     });
+
+    // weekly cron: pg-boss stores schedule in postgres and sends one job per tick
+    // even with several app instances running
+    await boss.createQueue(SCHEDULE_QUEUE, { retryLimit: 1, retryDelay: 300 });
+    await boss.work(SCHEDULE_QUEUE, async () => {
+        await runScheduledHarvests({ enqueue: enqueueHarvest });
+    });
+    if (env.harvestCron === 'off') {
+        await boss.unschedule(SCHEDULE_QUEUE);
+    } else {
+        await boss.schedule(SCHEDULE_QUEUE, env.harvestCron, null, { tz: env.harvestCronTz });
+        console.log(`Weekly harvest scheduled: "${env.harvestCron}" (${env.harvestCronTz})`);
+    }
 }
 
 export async function enqueueHarvest(runId) {
