@@ -43,9 +43,9 @@ export async function startJobs() {
     });
 
     await boss.work(HARVEST_QUEUE, async ([job]) => {
-        let status;
+        let result;
         try {
-            status = await runHarvest(job.data.runId, { signal: job.signal });
+            result = await runHarvest(job.data.runId, { signal: job.signal });
         } catch (err) {
             // retries resume run
             // only last attempt marks failed
@@ -55,7 +55,11 @@ export async function startJobs() {
             }
             throw err;
         }
-        if (status === 'completed') await enqueueFetch(job.data.runId);
+        if (result.status === 'completed') await enqueueFetch(job.data.runId);
+        // daily quota used up: come back when resets (run resumes from its saved answers)
+        if (result.status === 'paused') {
+            await boss.send(HARVEST_QUEUE, { runId: job.data.runId }, { startAfter: result.resumeAt });
+        }
     });
 
     // one queued or active audit per run 

@@ -268,4 +268,37 @@ describe('harvest failures', () => {
         expect(done.status).toBe('completed');
         expect(done.stats).toMatchObject({ answers: 4, calls_done: 4 });
     });
+
+    it('pauses on a used-up daily quota and resumes later where it stopped', async () => {
+        const run = await startRun({ samples_per_query: 1 });
+        const daily = httpError(429, 'LLM rate limit reached, try again later');
+        daily.retryAfterSeconds = 2305;
+        generateGrounded
+            .mockImplementationOnce(async () => groundedAnswer('one'))
+            .mockRejectedValueOnce(daily);
+
+        const before = Date.now();
+        const result = await runHarvest(run.id, FAST);
+        expect(result.status).toBe('paused');
+        expect(result.resumeAt.getTime()).toBeGreaterThanOrEqual(before + 2305 * 1000);
+
+        const paused = (await request(app).get(`${runs()}/${run.id}`).set(asE)).body;
+        expect(paused.status).toBe('running'); // still holds the category's one active run
+        expect(paused.stats).toMatchObject({ calls_done: 1, calls_failed: 0 });
+        expect(paused.stats.paused_until).toBe(result.resumeAt.toISOString());
+
+        generateGrounded.mockClear();
+        expect(await runHarvest(run.id, FAST)).toEqual({ status: 'completed' }); // what the delayed job does
+        expect(generateGrounded).toHaveBeenCalledTimes(1);
+        const done = (await request(app).get(`${runs()}/${run.id}`).set(asE)).body;
+        expect(done.stats).toMatchObject({ answers: 2 });
+        expect(done.stats).not.toHaveProperty('paused_until');
+    });
+
+    it('records the engine on the run and rejects an unknown one', async () => {
+        expect((await request(app).post(runs()).set(asE).send({ engine: 'chatgpt' })).status).toBe(400);
+        const run = await startRun({ samples_per_query: 1 });
+        expect(run).toMatchObject({ engine: 'gemini' });
+        await runHarvest(run.id, FAST);
+    });
 });

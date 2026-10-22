@@ -14,6 +14,10 @@ export const env = {
     // model for query generation and classification
     // overridable without code changes
     geminiModel: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+    // which engine new harvests ask: 'gemini' (google search grounding) or 'groq' (open model + browser search)
+    answerEngine: process.env.ANSWER_ENGINE || 'gemini',
+    groqApiKey: process.env.GROQ_API_KEY,
+    groqModel: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
     // gap between grounded calls in a harvest
     // 7s keeps under a 10 requests/minute free tier
     harvestMinIntervalMs: Number(process.env.HARVEST_MIN_INTERVAL_MS ?? 7000),

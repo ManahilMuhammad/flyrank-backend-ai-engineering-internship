@@ -12,6 +12,7 @@ import { getReport } from '../db/reports.js';
 import { generateReport } from '../services/report.js';
 import { isOwnedDomain } from '../lib/urls.js';
 import { STANCES } from '../services/standingAuditor.js';
+import { ENGINES, engineModel } from '../services/harvester.js';
 import { env } from '../config.js';
 
 // mounted under /workspaces/:workspaceId/categories/:categoryId/runs
@@ -21,7 +22,10 @@ const router = express.Router({ mergeParams: true });
 const createRunBody = z.object({
     // answers vary between calls 
     // so each query sampled several times
-    samples_per_query: z.number().int().min(1).max(5).default(3)
+    samples_per_query: z.number().int().min(1).max(5).default(3),
+    // which assistant to ask
+    // defaults to ANSWER_ENGINE
+    engine: z.enum(Object.keys(ENGINES)).optional()
 }).strict();
 
 const answersFilter = z.object({ query_id: uuid.optional() });
@@ -74,7 +78,8 @@ async function requireRun(req, res, next) {
 // queue harvest
 // runs in the background, poll GET /runs/:runId for progress
 router.post('/', validateBody(createRunBody), async (req, res) => {
-    assertConfigured(); // refuse now rather than fail later
+    const engine = req.body.engine ?? env.answerEngine;
+    const model = engineModel(engine); // refuse now rather than fail later in job
 
     const queries = await harvests.listActiveQueries(req.category.id);
     if (!queries.length) {
@@ -84,7 +89,8 @@ router.post('/', validateBody(createRunBody), async (req, res) => {
     let run;
     try {
         run = await harvests.createRun(req.category.id, {
-            model: env.geminiModel,
+            engine,
+            model,
             samplesPerQuery: req.body.samples_per_query
         });
     } catch (err) {

@@ -189,7 +189,7 @@ export function renderReportPdf(d, { compress = true } = {}) {
         }
 
         doc.moveDown(1.5).fontSize(8).fillColor(GREY);
-        text('Method: each query is asked several times with search grounding; a page\'s influence is its average share of ' +
+        text('Method: each query is asked several times with the engine\'s web search on; a page\'s influence is its average share of ' +
             'grounding support per answer. Standings are LLM verdicts whose quoted evidence is checked word for word ' +
             'against the page. Pages that block automated access (robots.txt, 403) cannot be audited and are listed above. ' +
             'Measured on one engine; other assistants may cite different sources.');

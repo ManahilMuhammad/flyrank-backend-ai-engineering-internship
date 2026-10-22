@@ -6,11 +6,11 @@ import { pool } from './pool.js';
 const COLUMNS = `id, category_id, engine, model, samples_per_query, status, stats, error,
     created_at, started_at, finished_at`;
 
-export async function createRun(categoryId, { model, samplesPerQuery }) {
+export async function createRun(categoryId, { engine = 'gemini', model, samplesPerQuery }) {
     const { rows } = await pool.query(
-        `INSERT INTO harvest_runs (category_id, model, samples_per_query)
-         VALUES ($1, $2, $3) RETURNING ${COLUMNS}`,
-        [categoryId, model, samplesPerQuery]
+        `INSERT INTO harvest_runs (category_id, engine, model, samples_per_query)
+         VALUES ($1, $2, $3, $4) RETURNING ${COLUMNS}`,
+        [categoryId, engine, model, samplesPerQuery]
     );
     return rows[0];
 }
@@ -63,7 +63,7 @@ export async function listAnswers(runId, { queryId } = {}) {
 // run plus what worker needs to execute it
 export async function getRunForWorker(runId) {
     const { rows } = await pool.query(
-        `SELECT r.id, r.category_id, r.samples_per_query, r.status, r.started_at,
+        `SELECT r.id, r.category_id, r.engine, r.samples_per_query, r.status, r.started_at,
                 b.name AS brand_name, b.aliases AS brand_aliases
          FROM harvest_runs r
          JOIN categories c ON c.id = r.category_id
@@ -114,13 +114,13 @@ export async function finishRun(runId, { status, stats, error = null }) {
 
 // answer, its sources and citations saved together or not at all
 // returns false if already saved by earlier attempt
-export async function saveAnswer(client, { runId, queryId, sampleN, text, brandMentioned, searchQueries, citations }) {
+export async function saveAnswer(client, { runId, queryId, sampleN, text, brandMentioned, searchQueries, engineResponse = null, citations }) {
     const { rows } = await client.query(
-        `INSERT INTO answers (run_id, query_id, sample_n, answer_text, brand_mentioned, search_queries)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO answers (run_id, query_id, sample_n, answer_text, brand_mentioned, search_queries, engine_response)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (run_id, query_id, sample_n) DO NOTHING
          RETURNING id`,
-        [runId, queryId, sampleN, text, brandMentioned, searchQueries]
+        [runId, queryId, sampleN, text, brandMentioned, searchQueries, engineResponse]
     );
     if (!rows[0]) return false;
     const answerId = rows[0].id;

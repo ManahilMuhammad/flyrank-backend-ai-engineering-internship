@@ -301,8 +301,8 @@
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "category_id": { "type": "string", "format": "uuid" },
-          "engine": { "type": "string", "example": "gemini" },
-          "model": { "type": "string", "example": "gemini-2.5-flash" },
+          "engine": { "type": "string", "enum": ["gemini", "groq"] },
+          "model": { "type": "string", "example": "openai/gpt-oss-120b" },
           "samples_per_query": { "type": "integer" },
           "status": { "type": "string", "enum": ["queued", "running", "completed", "failed"] },
           "error": { "type": "string", "nullable": true },
@@ -325,6 +325,9 @@
               "unique_domains": { "type": "integer" },
               "new_sources": { "type": "integer", "description": "Cited in this run but in no earlier run of the category" },
               "unresolved_chunks": { "type": "integer", "description": "Grounding links that could not be resolved to a page" },
+              "invalid_citations": { "type": "integer", "description": "groq: citation markers pointing at a line range the cited page doesn't have (dropped)" },
+              "engine_tokens": { "type": "integer", "description": "groq: total tokens the engine used, including the pages it read" },
+              "paused_until": { "type": "string", "format": "date-time", "description": "Set while the run waits for a daily quota to reset" },
               "redirects": {
                 "type": "object",
                 "properties": {
@@ -1278,7 +1281,7 @@
       ],
       "post": {
         "summary": "Start a harvest",
-        "description": "Queues a background job that asks Gemini (with Google Search grounding) every active query `samples_per_query` times, resolves the grounding redirect links to real page URLs, and stores each answer with the pages it was grounded in. Calls are paced to stay under the free-tier rate limit, so a 60-query run with 3 samples takes roughly 20-25 minutes. Poll `GET /runs/{runId}` for progress.",
+        "description": "Queues a background job that asks the answer engine every active query `samples_per_query` times and stores each answer with the pages it was grounded in.\n\n- `gemini`: Gemini with Google Search grounding; grounding redirect links are resolved to real page URLs.\n- `groq`: an open model on Groq (GROQ_MODEL, default openai/gpt-oss-120b) with its built-in browser search; sources are the pages it opened and cited.\n\nCalls are paced for free-tier limits. If a daily quota runs out, the run pauses (`stats.paused_until`) and resumes from its saved answers when the quota resets. Poll `GET /runs/{runId}` for progress.",
         "operationId": "startHarvest",
         "tags": ["Harvests"],
         "security": [{ "bearerAuth": [] }],
@@ -1288,7 +1291,8 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "samples_per_query": { "type": "integer", "minimum": 1, "maximum": 5, "default": 3 }
+                  "samples_per_query": { "type": "integer", "minimum": 1, "maximum": 5, "default": 3 },
+                  "engine": { "type": "string", "enum": ["gemini", "groq"], "description": "Defaults to ANSWER_ENGINE (gemini)" }
                 }
               }
             }
