@@ -1,5 +1,5 @@
 import { uuid } from './validate.js';
-import { getWorkspaceForUser } from '../db/workspaces.js';
+import { getWorkspaceForUser, syncMemberEmail } from '../db/workspaces.js';
 
 // requires req.user to be a member of workspaceId
 // sets req.workspace = { id, name, created_at, role }
@@ -16,7 +16,13 @@ export async function requireWorkspace(req, res, next) {
         return res.status(404).json({ error: 'Workspace not found' });
     }
 
-    req.workspace = workspace;
+    // keep member's email current for report delivery (no write unless it changed)
+    const { email, ...rest } = workspace;
+    if (req.user.email && email !== req.user.email) {
+        await syncMemberEmail(workspace.id, req.user.id, req.user.email);
+    }
+
+    req.workspace = rest;
     next();
 }
 

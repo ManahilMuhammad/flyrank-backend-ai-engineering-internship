@@ -23,7 +23,8 @@
     { "name": "Sources", "description": "Fetching and caching the pages a run cites, so their text can be audited." },
     { "name": "Standings", "description": "How each top source describes the brand: stance, staleness against the fact sheet, and a verbatim quote as evidence." },
     { "name": "Leverage", "description": "The ranked action list (influence x deficit) and the run's headline numbers." },
-    { "name": "Shifts", "description": "Week-over-week changes: sources entering or leaving the answers, citation rate moves, and pages whose verdict changed. Runs weekly for categories with weekly_harvest on." }
+    { "name": "Shifts", "description": "Week-over-week changes: sources entering or leaving the answers, citation rate moves, and pages whose verdict changed. Runs weekly for categories with weekly_harvest on." },
+    { "name": "Reports", "description": "A PDF per audited run, emailed to the category's report_recipients (or the workspace owners). In development, mail goes to Mailpit: http://localhost:8025." }
   ],
   "components": {
     "securitySchemes": {
@@ -194,16 +195,24 @@
             "type": "boolean",
             "default": false,
             "description": "Re-harvest this category on the weekly schedule (HARVEST_CRON, default Mondays 06:00 UTC). Each run spends LLM quota."
+          },
+          "report_recipients": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "format": "email" },
+            "description": "Who receives each run's PDF report. Empty = the workspace owners' login emails.",
+            "example": ["growth@flyrank.ai"]
           }
         }
       },
       "CategoryUpdate": {
         "type": "object",
-        "description": "Any of name, description, weekly_harvest; brand_id cannot be changed",
+        "description": "Any of name, description, weekly_harvest, report_recipients; brand_id cannot be changed",
         "properties": {
           "name": { "type": "string" },
           "description": { "type": "string", "nullable": true },
-          "weekly_harvest": { "type": "boolean" }
+          "weekly_harvest": { "type": "boolean" },
+          "report_recipients": { "type": "array", "items": { "type": "string", "format": "email" } }
         }
       },
       "ShiftEvent": {
@@ -235,6 +244,7 @@
           "name": { "type": "string" },
           "description": { "type": "string", "nullable": true },
           "weekly_harvest": { "type": "boolean" },
+          "report_recipients": { "type": "array", "items": { "type": "string" } },
           "created_at": { "type": "string", "format": "date-time" },
           "active_query_count": { "type": "integer" }
         }
@@ -944,6 +954,94 @@
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/categories/{categoryId}/runs/{runId}/report.pdf": {
+      "parameters": [
+        { "$ref": "#/components/parameters/workspaceId" },
+        { "$ref": "#/components/parameters/categoryId" },
+        { "$ref": "#/components/parameters/runId" }
+      ],
+      "get": {
+        "summary": "The run's PDF report",
+        "description": "Summary paragraph, key numbers (with the previous run's for comparison), the top 10 actions with evidence, what changed, and the influential sources that couldn't be audited. Normally built and emailed automatically after the audit; if it hasn't been yet, it is built on this request (and not emailed).",
+        "operationId": "getRunReportPdf",
+        "tags": ["Reports"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "PDF",
+            "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": {
+            "description": "Run has not completed or has not been audited yet",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/categories/{categoryId}/runs/{runId}/report": {
+      "parameters": [
+        { "$ref": "#/components/parameters/workspaceId" },
+        { "$ref": "#/components/parameters/categoryId" },
+        { "$ref": "#/components/parameters/runId" }
+      ],
+      "get": {
+        "summary": "Report status: when and to whom it was emailed",
+        "operationId": "getRunReport",
+        "tags": ["Reports"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Report metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "run_id": { "type": "string", "format": "uuid" },
+                    "recipients": { "type": "array", "items": { "type": "string" } },
+                    "emailed_at": { "type": "string", "format": "date-time", "nullable": true },
+                    "email_error": { "type": "string", "nullable": true, "description": "Why it wasn't emailed (no recipients, SMTP failure)" },
+                    "size_bytes": { "type": "integer" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "summary": "Rebuild the report and email it again",
+        "description": "Use after changing the category's report_recipients, or if the email failed.",
+        "operationId": "resendRunReport",
+        "tags": ["Reports"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "202": {
+            "description": "Queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "run_id": { "type": "string", "format": "uuid" }, "queued": { "type": "boolean" } }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": {
+            "description": "Run not audited yet, or a report for it is already being sent",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
         }
       }
     },

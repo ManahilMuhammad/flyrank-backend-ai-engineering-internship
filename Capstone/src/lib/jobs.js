@@ -6,6 +6,7 @@ import { fetchRunSources } from '../services/sourceFetcher.js';
 import { auditRunSources } from '../services/standingAuditor.js';
 import { detectShifts } from '../services/shifts.js';
 import { runScheduledHarvests } from '../services/scheduler.js';
+import { generateReport } from '../services/report.js';
 
 // background jobs live in postgres so queued harvests survive restarts
 // weekly cron -> harvest -> fetch sources -> audit standings (+ leverage, shifts)
@@ -15,6 +16,7 @@ export const HARVEST_QUEUE = 'harvest';
 export const FETCH_QUEUE = 'fetch-sources';
 export const AUDIT_QUEUE = 'audit-standings';
 export const SCHEDULE_QUEUE = 'weekly-harvest';
+export const REPORT_QUEUE = 'send-report';
 const HARVEST_RETRY_LIMIT = 2;
 
 let boss = null;
@@ -75,6 +77,13 @@ export async function startJobs() {
     await boss.work(AUDIT_QUEUE, async ([job]) => {
         await auditRunSources(job.data.runId);
         await detectShifts(job.data.runId);
+        await enqueueReport(job.data.runId);
+    });
+
+    // last step: pdf + email. separate job so a mail server outage retries only the email part
+    await boss.createQueue(REPORT_QUEUE, { policy: 'exclusive', retryLimit: 2, retryDelay: 120 });
+    await boss.work(REPORT_QUEUE, async ([job]) => {
+        await generateReport(job.data.runId);
     });
 
     // weekly cron: pg-boss stores schedule in postgres and sends one job per tick
@@ -106,6 +115,12 @@ export async function enqueueFetch(runId) {
 export async function enqueueAudit(runId) {
     if (!boss) throw new Error('Job queue is not started');
     return boss.send(AUDIT_QUEUE, { runId }, { singletonKey: runId });
+}
+
+// returns null when report for run already queued or being sent
+export async function enqueueReport(runId) {
+    if (!boss) throw new Error('Job queue is not started');
+    return boss.send(REPORT_QUEUE, { runId }, { singletonKey: runId });
 }
 
 export async function stopJobs() {

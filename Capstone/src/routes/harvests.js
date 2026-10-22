@@ -7,7 +7,9 @@ import { assertConfigured } from '../lib/gemini.js';
 import * as standings from '../db/standings.js';
 import * as leverage from '../db/leverage.js';
 import { listRunShifts } from '../db/shifts.js';
-import { enqueueHarvest, enqueueFetch, enqueueAudit } from '../lib/jobs.js';
+import { enqueueHarvest, enqueueFetch, enqueueAudit, enqueueReport } from '../lib/jobs.js';
+import { getReport } from '../db/reports.js';
+import { generateReport } from '../services/report.js';
 import { isOwnedDomain } from '../lib/urls.js';
 import { STANCES } from '../services/standingAuditor.js';
 import { env } from '../config.js';
@@ -163,6 +165,39 @@ router.post('/:runId/audit', requireRun, async (req, res) => {
     assertConfigured();
     const jobId = await enqueueAudit(req.run.id);
     if (!jobId) return res.status(409).json({ error: 'An audit for this run is already queued or running' });
+    res.status(202).json({ run_id: req.run.id, queued: true });
+});
+
+// run's pdf report built on first request if pipeline hasnt made it yet (not emailed then)
+router.get('/:runId/report.pdf', requireRun, requireCompleted, async (req, res) => {
+    let report = await getReport(req.run.id);
+    if (!report) {
+        const result = await generateReport(req.run.id, { send: false });
+        if (!result.generated) {
+            return res.status(409).json({ error: 'Run has not been audited yet; the report is available once the audit finishes' });
+        }
+        report = await getReport(req.run.id);
+    }
+    res.type('application/pdf')
+        .set('Content-Disposition', `inline; filename="priors-report-${req.run.id.slice(0, 8)}.pdf"`)
+        .send(report.pdf);
+});
+
+// whether report exists and who it was emailed to
+router.get('/:runId/report', requireRun, async (req, res) => {
+    const report = await getReport(req.run.id);
+    if (!report) return res.status(404).json({ error: 'No report for this run yet' });
+    const { pdf, ...meta } = report;
+    res.json({ ...meta, size_bytes: pdf.length });
+});
+
+// rebuild report and email it again (e.g. after changing report_recipients)
+router.post('/:runId/report', requireRun, requireCompleted, async (req, res) => {
+    if (!req.run.stats.headline) {
+        return res.status(409).json({ error: 'Run has not been audited yet; the report is available once the audit finishes' });
+    }
+    const jobId = await enqueueReport(req.run.id);
+    if (!jobId) return res.status(409).json({ error: 'A report for this run is already being sent' });
     res.status(202).json({ run_id: req.run.id, queued: true });
 });
 

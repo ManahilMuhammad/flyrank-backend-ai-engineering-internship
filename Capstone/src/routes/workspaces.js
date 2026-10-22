@@ -17,7 +17,7 @@ const workspaceBody = z.object({
 router.use(requireAuth);
 
 router.post('/', validateBody(workspaceBody), async (req, res) => {
-    const workspace = await workspaces.createWorkspace(req.user.id, req.body.name);
+    const workspace = await workspaces.createWorkspace(req.user.id, req.body.name, req.user.email);
     res.status(201).json(workspace);
 });
 

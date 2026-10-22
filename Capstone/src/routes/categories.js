@@ -16,19 +16,23 @@ const categoryFields = {
     // fed to query generator so context improves query set
     description: z.string().trim().max(1000).nullable(),
     // opt in to weekly re-harvest (each run spends llm quota)
-    weekly_harvest: z.boolean()
+    weekly_harvest: z.boolean(),
+    // who gets each run's report
+    // empty = workspace owners
+    report_recipients: z.array(z.string().trim().toLowerCase().email()).max(20)
 };
 
 const createCategoryBody = z.object({
     brand_id: uuid,
     name: categoryFields.name,
     description: categoryFields.description.optional(),
-    weekly_harvest: categoryFields.weekly_harvest.optional()
+    weekly_harvest: categoryFields.weekly_harvest.optional(),
+    report_recipients: categoryFields.report_recipients.optional()
 }).strict();
 
 const updateCategoryBody = z.object(categoryFields).partial().strict().refine(
     v => Object.keys(v).length > 0,
-    'Provide at least one of: name, description, weekly_harvest'
+    'Provide at least one of: name, description, weekly_harvest, report_recipients'
 );
 
 const SHIFT_TYPES = ['source_entered', 'source_exited', 'standing_changed', 'citation_rate_changed'];

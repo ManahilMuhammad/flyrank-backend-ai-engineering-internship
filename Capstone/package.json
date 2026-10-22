@@ -17,6 +17,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsdom": "^29.1.1",
+    "nodemailer": "^10.2.1",
+    "pdfkit": "^0.20.2",
     "pg": "^8.23.0",
     "pg-boss": "^12.38.0",
     "robots-parser": "^3.0.1",

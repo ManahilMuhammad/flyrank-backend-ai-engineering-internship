@@ -26,6 +26,12 @@ export const env = {
     harvestCronTz: process.env.HARVEST_CRON_TZ || 'UTC',
     supabaseUrl: process.env.SUPABASE_URL,
     supabaseKey: process.env.SUPABASE_KEY,
+    // mailpit in development; point at a real provider (and set user/pass) to deliver for real
     smtpHost: process.env.SMTP_HOST || 'localhost',
-    smtpPort: Number(process.env.SMTP_PORT) || 1025
+    smtpPort: Number(process.env.SMTP_PORT) || 1025,
+    smtpUser: process.env.SMTP_USER,
+    smtpPass: process.env.SMTP_PASS,
+    smtpFrom: process.env.SMTP_FROM || 'Priors <reports@priors.local>',
+    // link back to api in report emails
+    publicUrl: process.env.PRIORS_PUBLIC_URL || `http://localhost:${Number(process.env.PRIORS_PORT) || 3010}`
 };
