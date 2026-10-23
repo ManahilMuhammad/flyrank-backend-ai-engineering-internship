@@ -14,9 +14,30 @@ export function assertGroqConfigured() {
     if (!env.groqApiKey) throw httpError(503, 'Groq engine is not configured (missing GROQ_API_KEY)');
 }
 
-// 【3†L6-L13】 = lines 6-13 of 3rd page model opened (search result lists not counted)
+// 【3†L6-L13】 = lines 6-13 of page the model read - number is meant to say which page but not reliable
+// on real answers (drifts once model runs find/python steps) like cited lines are:
+// so each citation goes to opened page whose lines 6-13 actually match claim
 const MARKER = /【(\d+)†L(\d+)(?:-L(\d+))?】/g;
 const MARKER_RUN = /(?:【\d+†[^】]*】)+/g;
+const CLAIM_CHARS = 300; // how much of text before citation counts as claim
+const MIN_SHARED_WORDS = 2; // citation has to share at least this much with claim to count
+const MIN_OVERLAP = 0.1;
+
+const contentWords = text => new Set(text.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) ?? []);
+
+// index of opened page whose cited lines best match claim or -1
+function matchCitation(pages, claimWords, from, to) {
+    let best = { index: -1, shared: 0, overlap: 0 };
+    pages.forEach((page, index) => {
+        if (to >= page.lines.length) return; // range doesnt exist on this page
+        const cited = contentWords(page.lines.slice(from, to + 1).join(' '));
+        let shared = 0;
+        for (const w of claimWords) if (cited.has(w)) shared++;
+        const overlap = claimWords.size ? shared / claimWords.size : 0;
+        if (overlap > best.overlap) best = { index, shared, overlap };
+    });
+    return best.shared >= MIN_SHARED_WORDS && best.overlap >= MIN_OVERLAP ? best.index : -1;
+}
 
 // turn groq browser_search response into shape harvester expects from any engine:
 // { text, chunks: [{ uri, title }], supports: [{ chunkIndices, length }], searchQueries }
@@ -37,7 +58,7 @@ export function parseBrowseResponse(message) {
         const uri = /^L1: URL: (.*)$/m.exec(t.output ?? '')?.[1]?.trim() ?? t.search_results?.results?.[0]?.url;
         if (!uri) continue;
         const title = /^L2: (.*)$/m.exec(t.output)?.[1]?.replace(/\\\|/g, '|').trim() || null;
-        pages.push({ uri, title, lineCount: (t.output ?? '').split('\n').length });
+        pages.push({ uri, title, lines: (t.output ?? '').split('\n').map(l => l.replace(/^L\d+: /, '')) });
     }
 
     const content = message.content ?? '';
@@ -51,16 +72,15 @@ export function parseBrowseResponse(message) {
         const length = content.slice(from, run.index).trim().length;
         segmentStart = run.index + run[0].length;
 
+        const claimWords = contentWords(content.slice(Math.max(from, run.index - CLAIM_CHARS), run.index));
         const chunkIndices = [];
-        for (const [, cursor, , to] of run[0].matchAll(MARKER)) {
-            const page = pages[Number(cursor) - 1];
-            const lastLine = Number(to ?? 0);
-            // model's cursor ids not always right: only trust citation whose lines exist on page
-            if (!page || lastLine >= page.lineCount) {
-                invalid++;
+        for (const [, , start, end] of run[0].matchAll(MARKER)) {
+            const index = matchCitation(pages, claimWords, Number(start), Number(end ?? start));
+            if (index === -1) {
+                invalid++; // no opened page has text at those lines that backs claim
                 continue;
             }
-            if (!chunkIndices.includes(Number(cursor) - 1)) chunkIndices.push(Number(cursor) - 1);
+            if (!chunkIndices.includes(index)) chunkIndices.push(index);
         }
         if (chunkIndices.length && length > 0) supports.push({ chunkIndices, length });
     }

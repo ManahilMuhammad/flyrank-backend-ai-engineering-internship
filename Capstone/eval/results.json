@@ -1,0 +1,143 @@
+{
+  "cases": 40,
+  "labelled": 40,
+  "unlabelled": 0,
+  "no_prediction": 6,
+  "evidence_rejected": 0,
+  "stance": {
+    "n": 34,
+    "accuracy": 0.882,
+    "kappa": 0.795,
+    "per_class": {
+      "absent": {
+        "support": 19,
+        "predicted": 20,
+        "precision": 0.95,
+        "recall": 1,
+        "f1": 0.974
+      },
+      "neutral": {
+        "support": 6,
+        "predicted": 2,
+        "precision": 1,
+        "recall": 0.333,
+        "f1": 0.5
+      },
+      "favorable": {
+        "support": 9,
+        "predicted": 11,
+        "precision": 0.818,
+        "recall": 1,
+        "f1": 0.9
+      },
+      "unfavorable": {
+        "support": 0,
+        "predicted": 1,
+        "precision": 0,
+        "recall": null,
+        "f1": null
+      }
+    },
+    "confusion": {
+      "absent": {
+        "absent": 19,
+        "neutral": 0,
+        "favorable": 0,
+        "unfavorable": 0
+      },
+      "neutral": {
+        "absent": 1,
+        "neutral": 2,
+        "favorable": 2,
+        "unfavorable": 1
+      },
+      "favorable": {
+        "absent": 0,
+        "neutral": 0,
+        "favorable": 9,
+        "unfavorable": 0
+      },
+      "unfavorable": {
+        "absent": 0,
+        "neutral": 0,
+        "favorable": 0,
+        "unfavorable": 0
+      }
+    }
+  },
+  "stance_llm_only": {
+    "n": 15,
+    "accuracy": 0.733,
+    "kappa": 0.474,
+    "per_class": {
+      "absent": {
+        "support": 0,
+        "predicted": 1,
+        "precision": 0,
+        "recall": null,
+        "f1": null
+      },
+      "neutral": {
+        "support": 6,
+        "predicted": 2,
+        "precision": 1,
+        "recall": 0.333,
+        "f1": 0.5
+      },
+      "favorable": {
+        "support": 9,
+        "predicted": 11,
+        "precision": 0.818,
+        "recall": 1,
+        "f1": 0.9
+      },
+      "unfavorable": {
+        "support": 0,
+        "predicted": 1,
+        "precision": 0,
+        "recall": null,
+        "f1": null
+      }
+    },
+    "confusion": {
+      "absent": {
+        "absent": 0,
+        "neutral": 0,
+        "favorable": 0,
+        "unfavorable": 0
+      },
+      "neutral": {
+        "absent": 1,
+        "neutral": 2,
+        "favorable": 2,
+        "unfavorable": 1
+      },
+      "favorable": {
+        "absent": 0,
+        "neutral": 0,
+        "favorable": 9,
+        "unfavorable": 0
+      },
+      "unfavorable": {
+        "absent": 0,
+        "neutral": 0,
+        "favorable": 0,
+        "unfavorable": 0
+      }
+    }
+  },
+  "rule_absent": {
+    "n": 19,
+    "human_agrees": 19
+  },
+  "stale": {
+    "n": 27,
+    "tp": 7,
+    "fp": 1,
+    "fn": 0,
+    "tn": 19,
+    "accuracy": 0.963,
+    "precision": 0.875,
+    "recall": 1
+  }
+}

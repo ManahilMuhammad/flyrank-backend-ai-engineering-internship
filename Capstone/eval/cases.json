@@ -1,0 +1,61 @@
+{
+  "description": "Evaluation set for the standing classifier: every page x every brand. Pages are public comparisons and roundups in the GEO tools category that the fetcher can read (the review sites that list FlyRank all block automated access). Fact sheets contain only what each brand's own site stated on as_of.",
+  "brands": {
+    "flyrank": {
+      "name": "FlyRank",
+      "aliases": ["FlyRank AI", "flyrank.ai"],
+      "fact_sheet": {
+        "as_of": "2026-10-22",
+        "source": "https://flyrank.ai/pricing",
+        "pricing_usd_per_month": { "Sparrow": 1999, "Owl": 3499, "Eagle": 4999, "Phoenix": 9999 },
+        "pricing_note": "Sparrow is the entry plan; prices are 'starting at' per month",
+        "sparrow_includes": ["AI Visibility tracking for up to 100 prompts across ChatGPT, Gemini & Claude", "On-page SEO & GEO/AEO optimization", "Up to 300 content credits per month", "Reddit mention tracking for up to 10 keywords"]
+      }
+    },
+    "peec": {
+      "name": "Peec AI",
+      "aliases": ["Peec", "peec.ai"],
+      "fact_sheet": {
+        "as_of": "2026-10-22",
+        "source": "https://peec.ai/pricing",
+        "brand_plans": [
+          { "prompts": 50, "models": "choose 3", "projects": 1, "tracking": "daily", "users": "unlimited" },
+          { "prompts": 150, "models": "choose 3", "projects": 2, "tracking": "daily", "users": "unlimited" },
+          { "prompts": 350, "models": "choose 3", "projects": 5, "tracking": "daily", "users": "unlimited", "extras": ["multi country", "Looker Studio integration"] }
+        ],
+        "enterprise": "custom annual pricing; all models (up to 13 LLMs tracked), API access, SSO, daily or weekly tracking",
+        "note": "Dollar prices are rendered client-side and were not captured; do not judge price claims as stale"
+      }
+    },
+    "profound": {
+      "name": "Profound",
+      "aliases": ["tryprofound.com", "Profound AI"],
+      "fact_sheet": {
+        "as_of": "2026-10-22",
+        "source": "https://www.tryprofound.com/pricing",
+        "plans": [
+          { "name": "Trial", "price": "free", "includes": "limited AI Marketer credits, 50 prompts run daily for 7 days, ChatGPT, Gemini and Google AI Overviews" },
+          { "name": "Enterprise", "price": "custom", "includes": "tailored prompt tracking, up to 9 answer engines, dedicated support, SSO/SAML, SOC 2" }
+        ],
+        "note": "No self-serve paid plans (e.g. a priced Starter or Growth tier) are listed"
+      }
+    },
+    "semrush": {
+      "name": "Semrush",
+      "aliases": ["SEMrush"],
+      "fact_sheet": {}
+    }
+  },
+  "pages": [
+    { "key": "p01", "url": "https://nogood.io/blog/generative-engine-optimization-tools/" },
+    { "key": "p02", "url": "https://www.superlines.io/articles/what-tools-are-there-to-help-me-rank-in-chatgpt" },
+    { "key": "p03", "url": "https://europeanbusinessmagazine.com/the-5-best-geo-platforms-of-2026-tested-ranked-and-compared-for-ai-search-visibility/" },
+    { "key": "p04", "url": "https://alhena.ai/blog/profound-vs-peec-vs-scrunch-vs-alhena/" },
+    { "key": "p05", "url": "https://dupple.com/learn/profound-vs-peec-ai" },
+    { "key": "p06", "url": "https://www.airops.com/blog/profound-vs-peec-comparison-2026" },
+    { "key": "p07", "url": "https://www.superlines.io/articles/superlines-vs-profound-vs-peec-ai" },
+    { "key": "p08", "url": "https://getairefs.com/blog/profound-vs-peec-ai/" },
+    { "key": "p09", "url": "https://www.get-ryze.ai/blog/ai-visibility-vs-traditional-rank-tracking-what-s-different" },
+    { "key": "p10", "url": "https://zapier.com/blog/best-rank-tracker" }
+  ]
+}

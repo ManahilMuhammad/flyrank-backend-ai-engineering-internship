@@ -1,0 +1,394 @@
+{
+  "cases": {
+    "p01:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "454c1ea771cd200cc8de5461fa2e39878db7b5495f954083823fdc01377e8b03",
+      "predicted_at": "2026-10-22T19:57:56.962Z"
+    },
+    "p01:peec": {
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "What sets Peec apart is its simplicity: it visualizes AI visibility trends over time, surfaces which pages or assets drive the most citations, and flags shifts in sentiment or competitor share of voice. It’s particularly well-suited for agencies or small teams managing multiple brands.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "454c1ea771cd200cc8de5461fa2e39878db7b5495f954083823fdc01377e8b03",
+      "predicted_at": "2026-10-22T19:59:26.507Z"
+    },
+    "p01:profound": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "454c1ea771cd200cc8de5461fa2e39878db7b5495f954083823fdc01377e8b03",
+      "predicted_at": "2026-10-22T19:59:33.535Z"
+    },
+    "p01:semrush": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "454c1ea771cd200cc8de5461fa2e39878db7b5495f954083823fdc01377e8b03",
+      "predicted_at": "2026-10-22T19:59:33.548Z"
+    },
+    "p02:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "108fdaf29b6850524855caeba0f5df81a144b66bb48ecc53b74d5f8bba389a7e",
+      "predicted_at": "2026-10-22T19:59:33.568Z"
+    },
+    "p02:peec": {
+      "stance": "favorable",
+      "isStale": true,
+      "staleReason": "The page states Peec AI's plans offer 25, 100, and 300+ prompts, whereas the fact sheet specifies plans offering 50, 150, and 350 prompts.",
+      "evidence": "Pricing: Basic: €89/month (25 prompts), Plus: €199/month (100 prompts), Business: €499/month (300+ prompts)",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "108fdaf29b6850524855caeba0f5df81a144b66bb48ecc53b74d5f8bba389a7e",
+      "predicted_at": "2026-10-22T20:02:55.708Z"
+    },
+    "p02:profound": {
+      "stance": "favorable",
+      "isStale": true,
+      "staleReason": "The page claims Profound offers a Standard plan starting at $89/month, but the fact sheet confirms only a free Trial and custom Enterprise plan are available, with no self-serve paid tiers.",
+      "evidence": "Pricing: Starting at $89/month for the Standard plan, with custom enterprise pricing available.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "108fdaf29b6850524855caeba0f5df81a144b66bb48ecc53b74d5f8bba389a7e",
+      "predicted_at": "2026-10-23T13:52:37.539Z"
+    },
+    "p02:semrush": {
+      "stance": "neutral",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Semrush forecasts a similar outcome, projecting that LLM-driven traffic will surpass traditional Google search by 2028.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "108fdaf29b6850524855caeba0f5df81a144b66bb48ecc53b74d5f8bba389a7e",
+      "predicted_at": "2026-10-23T13:52:50.630Z"
+    },
+    "p03:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "0c0a1ed6735892e8a4c6b14c846330cae25ebd1836bd6b1efd0d767ee377eb78",
+      "predicted_at": "2026-10-22T20:10:09.591Z"
+    },
+    "p03:peec": {
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Let’s review the 5 best GEO tools overall, with Peec AI ranked first due to its multi-LLM coverage, prompt-level tracking, and built-in Actions recommendations.",
+      "confidence": 1,
+      "model": "gemini-3.8-flash",
+      "page_hash": "0c0a1ed6735892e8a4c6b14c846330cae25ebd1836bd6b1efd0d767ee377eb78",
+      "predicted_at": "2026-10-22T20:12:30.992Z"
+    },
+    "p03:profound": {
+      "stance": "favorable",
+      "isStale": true,
+      "staleReason": "The page lists paid Starter/Lite tiers and states there is no free trial, but Profound offers a free Trial and has no self-serve paid Starter or Growth plans.",
+      "evidence": "Starter/Lite – $99–$499/month",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "0c0a1ed6735892e8a4c6b14c846330cae25ebd1836bd6b1efd0d767ee377eb78",
+      "predicted_at": "2026-10-23T13:53:49.611Z"
+    },
+    "p03:semrush": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "0c0a1ed6735892e8a4c6b14c846330cae25ebd1836bd6b1efd0d767ee377eb78",
+      "predicted_at": "2026-10-22T20:13:00.831Z"
+    },
+    "p04:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "e171ac2406c8a9e009231850c12244ee12e809ececed2d9892ce31336b59e0e4",
+      "predicted_at": "2026-10-22T20:13:00.929Z"
+    },
+    "p04:peec": {
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Peec AI is the best-value multi-engine analytics tool for mid-market teams and agencies.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "e171ac2406c8a9e009231850c12244ee12e809ececed2d9892ce31336b59e0e4",
+      "predicted_at": "2026-10-23T13:54:15.004Z"
+    },
+    "p04:profound": {
+      "stance": "favorable",
+      "isStale": true,
+      "staleReason": "The page states that Profound offers a starter tier from $99/month, but the current fact sheet shows only a free Trial and custom Enterprise pricing, with no self-serve paid tiers.",
+      "evidence": "Peec AI has the lowest paid entry point at $95/mo, followed by Profound's $99/mo starter tier, Alhena's $199/mo Essentials plan, and Scrunch at $250/mo billed annually.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "e171ac2406c8a9e009231850c12244ee12e809ececed2d9892ce31336b59e0e4",
+      "predicted_at": "2026-10-23T13:54:38.067Z"
+    },
+    "p04:semrush": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "e171ac2406c8a9e009231850c12244ee12e809ececed2d9892ce31336b59e0e4",
+      "predicted_at": "2026-10-22T20:13:47.310Z"
+    },
+    "p05:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "9282ec5d3cb0d6ecea5911d9f635c83f2a6ab5c08c1db4bdcb4450c62f9044f5",
+      "predicted_at": "2026-10-22T20:13:47.417Z"
+    },
+    "p05:peec": {
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Pick Peec AI if you are a lean marketing team or agency that wants transparent self-serve pricing, a clean visibility score, and a setup you can finish in an afternoon. New users get 30% off for six months through our Peec link.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "9282ec5d3cb0d6ecea5911d9f635c83f2a6ab5c08c1db4bdcb4450c62f9044f5",
+      "predicted_at": "2026-10-23T13:56:25.103Z"
+    },
+    "p05:profound": {
+      "stance": "favorable",
+      "isStale": true,
+      "staleReason": "Profound no longer offers self-serve paid tiers such as Starter ($99/month) or Growth ($399/month); current pricing consists only of a free Trial and a custom Enterprise plan.",
+      "evidence": "Profound's Starter plan costs $99 a month billed yearly but tracks ChatGPT only, with 50 unique prompts.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "9282ec5d3cb0d6ecea5911d9f635c83f2a6ab5c08c1db4bdcb4450c62f9044f5",
+      "predicted_at": "2026-10-23T13:57:25.262Z"
+    },
+    "p05:semrush": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "9282ec5d3cb0d6ecea5911d9f635c83f2a6ab5c08c1db4bdcb4450c62f9044f5",
+      "predicted_at": "2026-10-22T20:14:33.085Z"
+    },
+    "p06:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "a6589fd47056b01f5b4668c978d236b61d29ff91582dd32fe6b6f5c83b07d001",
+      "predicted_at": "2026-10-22T20:14:33.195Z"
+    },
+    "p06:peec": {
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Peec suits small in-house teams and agencies that value quick answers and unlimited seats over analytical breadth.",
+      "confidence": 0.9,
+      "model": "gemini-3.8-flash",
+      "page_hash": "a6589fd47056b01f5b4668c978d236b61d29ff91582dd32fe6b6f5c83b07d001",
+      "predicted_at": "2026-10-23T14:00:51.586Z"
+    },
+    "p06:profound": {
+      "stance": "neutral",
+      "isStale": true,
+      "staleReason": "The page refers to Profound having published tiers including entry and Growth rates with annual billing, whereas Profound has no self-serve paid tiers (such as Starter or Growth) and only offers a free Trial and custom Enterprise plan.",
+      "evidence": "On total cost of ownership, Profound's published tiers assume annual billing, so the entry and Growth rates commit you for the year.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "a6589fd47056b01f5b4668c978d236b61d29ff91582dd32fe6b6f5c83b07d001",
+      "predicted_at": "2026-10-23T14:02:19.076Z"
+    },
+    "p06:semrush": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "a6589fd47056b01f5b4668c978d236b61d29ff91582dd32fe6b6f5c83b07d001",
+      "predicted_at": "2026-10-22T20:15:19.107Z"
+    },
+    "p07:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "e527d1b287c1d3549300bcedcd3198fbc3d265ae69bd23f07746d05b3af55a13",
+      "predicted_at": "2026-10-22T20:15:19.199Z"
+    },
+    "p07:peec": {
+      "stance": "unfavorable",
+      "isStale": true,
+      "staleReason": "The page claims that Peec AI includes only 3 fixed engines (ChatGPT, Perplexity, GAIO) with others requiring paid add-ons, whereas Peec AI's plans allow users to choose 3 models.",
+      "evidence": "3 engines (ChatGPT, Perplexity, GAIO), others as paid add ons",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "e527d1b287c1d3549300bcedcd3198fbc3d265ae69bd23f07746d05b3af55a13",
+      "predicted_at": "2026-10-23T14:05:22.340Z"
+    },
+    "p07:profound": {
+      "stance": "favorable",
+      "isStale": true,
+      "staleReason": "The page refers to a Growth tier and a $99/month Starter plan for Profound, but the fact sheet confirms Profound only offers a free Trial and custom Enterprise pricing with no self-serve paid plans.",
+      "evidence": "Actionable GEO recommendations are reserved for Growth and Enterprise plans only.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "e527d1b287c1d3549300bcedcd3198fbc3d265ae69bd23f07746d05b3af55a13",
+      "predicted_at": "2026-10-23T14:13:14.621Z"
+    },
+    "p07:semrush": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "e527d1b287c1d3549300bcedcd3198fbc3d265ae69bd23f07746d05b3af55a13",
+      "predicted_at": "2026-10-23T14:17:21.121Z"
+    },
+    "p08:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "5dcd4f74843efcb1994219af93f11982e75bd2d5d83bd05bc22161a2bdf1fab7",
+      "predicted_at": "2026-10-22T20:16:28.313Z"
+    },
+    "p08:peec": {
+      "stance": "neutral",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Profound and Peec AI are two of the best-funded platforms in the AEO (Answer Engine Optimization) category—Profound at $155M+, Peec AI at about $29M—and they’ve made different bets on what the category actually needs.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "5dcd4f74843efcb1994219af93f11982e75bd2d5d83bd05bc22161a2bdf1fab7",
+      "predicted_at": "2026-10-23T14:20:55.422Z"
+    },
+    "p08:profound": {
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Choose Profound if you’re an enterprise team that needs prompt volume data, multi-platform coverage across up to 9 AI models, content generation built into the platform, and SOC 2 compliance. Expect custom Enterprise pricing after the free trial. The $155M+ in funding, G2 Leader status, and customers like Ramp, MongoDB, and Indeed reflect genuine enterprise maturity.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "5dcd4f74843efcb1994219af93f11982e75bd2d5d83bd05bc22161a2bdf1fab7",
+      "predicted_at": "2026-10-23T14:33:07.483Z"
+    },
+    "p08:semrush": {
+      "stance": "neutral",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Peec AI does not offer prompt volume data (G2 reviewers say they still rely on Semrush for prompt-volume research).",
+      "confidence": 0.9,
+      "model": "gemini-3.8-flash",
+      "page_hash": "5dcd4f74843efcb1994219af93f11982e75bd2d5d83bd05bc22161a2bdf1fab7",
+      "predicted_at": "2026-10-23T14:35:19.283Z"
+    },
+    "p09:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "91e9a37569f29f876f4f031a8ad61cc32d93c1229747b6b4f0be49d737ed89d2",
+      "predicted_at": "2026-10-22T20:17:37.341Z"
+    },
+    "p09:peec": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "91e9a37569f29f876f4f031a8ad61cc32d93c1229747b6b4f0be49d737ed89d2",
+      "predicted_at": "2026-10-22T20:17:37.359Z"
+    },
+    "p09:profound": {
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Profound is one of the most focused dedicated AI visibility platforms available in 2026. Rather than extending a traditional SEO suite, it was built from scratch to monitor how brands appear in AI-generated answers — tracking citation frequency, sentiment accuracy, competitor share of voice, and the specific sources AI models reference when mentioning your category.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "91e9a37569f29f876f4f031a8ad61cc32d93c1229747b6b4f0be49d737ed89d2",
+      "predicted_at": "2026-10-23T14:40:17.259Z"
+    },
+    "p09:semrush": {
+      "error": "LLM rate limit reached, try again in a minute",
+      "page_hash": "91e9a37569f29f876f4f031a8ad61cc32d93c1229747b6b4f0be49d737ed89d2"
+    },
+    "p10:flyrank": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "e42b792a99a56f4de379163d3ce16e5f8db23be9c3ef5549a3556f8c3b86c4b1",
+      "predicted_at": "2026-10-22T20:18:29.865Z"
+    },
+    "p10:peec": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "e42b792a99a56f4de379163d3ce16e5f8db23be9c3ef5549a3556f8c3b86c4b1",
+      "predicted_at": "2026-10-22T20:18:29.877Z"
+    },
+    "p10:profound": {
+      "stance": "absent",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": null,
+      "confidence": 1,
+      "model": "rule",
+      "page_hash": "e42b792a99a56f4de379163d3ce16e5f8db23be9c3ef5549a3556f8c3b86c4b1",
+      "predicted_at": "2026-10-22T20:18:29.894Z"
+    },
+    "p10:semrush": {
+      "error": "LLM rate limit reached, try again in a minute",
+      "page_hash": "e42b792a99a56f4de379163d3ce16e5f8db23be9c3ef5549a3556f8c3b86c4b1"
+    }
+  },
+  "prompt_version": "standing-v1",
+  "model": "gemini-3.8-flash"
+}

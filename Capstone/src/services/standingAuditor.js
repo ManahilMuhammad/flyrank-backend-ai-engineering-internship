@@ -155,6 +155,17 @@ async function classify({ brand, source, pageText, passages, counts }) {
     return { rejected: feedback.replace('Your previous answer was rejected: ', '') };
 }
 
+// audit one page for one brand exactly as pipeline does (rule first, then llm with quote check)
+// used by evaluation scripts
+// returns standing ({ stance, isStale, ..., model }) or { rejected }
+export async function auditPage({ brand, url, title = null, text }) {
+    const passages = brandPassages(text, [brand.name, ...brand.aliases]);
+    if (!passages) {
+        return { stance: 'absent', isStale: false, staleReason: null, evidence: null, confidence: 1, model: 'rule' };
+    }
+    return classify({ brand, source: { url, title }, pageText: text, passages, counts: { llm_calls: 0 } });
+}
+
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // audit run's top sources for category's brand

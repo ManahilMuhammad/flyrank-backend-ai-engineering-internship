@@ -4,25 +4,33 @@ process.env.GROQ_API_KEY ||= 'gsk_test_key'; // generateBrowsed refuses without 
 const { parseBrowseResponse, generateBrowsed } = await import('../src/lib/groq.js');
 
 // shaped like real groq/openai gpt-oss browser_search response (trimmed)
-const lines = (url, title, n) => [`L0: `, `L1: URL: ${url}`, `L2: ${title}`, ...Array.from({ length: n - 3 }, (_, i) => `L${i + 3}: text`)].join('\n');
+// page of n numbered lines
+// 'at' puts real text on given line numbers, rest is filler
+const lines = (url, title, n, at = {}) => [`L0: `, `L1: URL: ${url}`, `L2: ${title}`,
+    ...Array.from({ length: n - 3 }, (_, i) => `L${i + 3}: ${at[i + 3] ?? 'filler navigation footer'}`)].join('\n');
+const LETTERTRACE = { 5: 'Lettertrace is free, open source and self-hosted.', 21: 'Self-hosted Lettertrace keeps data private and free.' };
+const ENCITED = { 6: 'Encited tracks five engines including ChatGPT and Gemini.' };
+const SIMULAR = { 8: 'Simular runs the real interfaces of each assistant weekly.' };
+const ORCHLY = { 40: 'Orchly builds a prompt library from your topics automatically.' };
 const message = {
     content: 'Intro line without a citation.\n' +
         'Lettertrace is free and self-hosted【1†L4-L12】【1†L20-L22】. Encited tracks five engines【2†L5-L9】\n' +
         'Simular runs real interfaces weekly【3†L6-L13】 and this claim cites a line that does not exist【2†L400-L410】.',
     executed_tools: [
         { index: 0, type: 'browser_search', arguments: '{"query": "monitor brand mentions in chatgpt", "topn": 10}', output: 'L0: \nL1: URL: https://exa.ai/search?q=x\nL2: # Search Results' },
-        { index: 1, type: 'browser.open', arguments: '{"cursor": 0, "id": 5}', output: lines('https://lettertrace.com/', 'Lettertrace: Monitor how AI talks about your brand', 194) },
-        { index: 2, type: 'browser.open', arguments: '{"cursor": 0, "id": 8}', output: lines('https://encited.com/ai-visibility-tracker', 'AI Search analytics \\| Encited', 229) },
+        { index: 1, type: 'browser.open', arguments: '{"cursor": 0, "id": 5}', output: lines('https://lettertrace.com/', 'Lettertrace: Monitor how AI talks about your brand', 194, LETTERTRACE) },
+        { index: 2, type: 'browser.open', arguments: '{"cursor": 0, "id": 8}', output: lines('https://encited.com/ai-visibility-tracker', 'AI Search analytics \\| Encited', 229, ENCITED) },
         { index: 3, type: 'browser_search', arguments: '{"query": "gemini brand monitoring"}', output: 'L0: \nL1: URL: https://exa.ai/search?q=y' },
-        { index: 4, type: 'browser.open', arguments: '{"cursor": 3, "id": 5}', output: lines('https://www.simular.ai/solutions/ai-brand-monitoring', 'Simular', 124) },
-        { index: 5, type: 'browser.open', arguments: '{"cursor": 0, "id": 1}', output: lines('https://orchly.ai/tracker/', 'Orchly', 293) } // opened, never cited
+        { index: 4, type: 'function', arguments: '{}', output: 'python output' }, // steps that arent pages are ignored
+        { index: 5, type: 'browser.open', arguments: '{"cursor": 3, "id": 5}', output: lines('https://www.simular.ai/solutions/ai-brand-monitoring', 'Simular', 124, SIMULAR) },
+        { index: 6, type: 'browser.open', arguments: '{"cursor": 0, "id": 1}', output: lines('https://orchly.ai/tracker/', 'Orchly', 293, ORCHLY) } // opened, never cited
     ]
 };
 
 describe('parseBrowseResponse', () => {
     const parsed = parseBrowseResponse(message);
 
-    it('numbers citations by the pages opened, in order, skipping search result lists', () => {
+    it('assigns each citation to the opened page whose cited lines back the claim', () => {
         expect(parsed.chunks).toEqual([
             { uri: 'https://lettertrace.com/', title: 'Lettertrace: Monitor how AI talks about your brand' },
             { uri: 'https://encited.com/ai-visibility-tracker', title: 'AI Search analytics | Encited' },
@@ -38,6 +46,19 @@ describe('parseBrowseResponse', () => {
             // last run only cited line range encited doesnt have: dropped
         ]);
         expect(parsed.invalidCitations).toBe(1);
+    });
+
+    it('follows the cited text when the marker number points at the wrong page', () => {
+        // real answers drift: here 【1】 means orchly (only orchly has these words at line 40)
+        const p = parseBrowseResponse({ ...message, content: 'Orchly builds a prompt library from topics【1†L40-L40】.' });
+        expect(p.chunks).toEqual([{ uri: 'https://orchly.ai/tracker/', title: 'Orchly' }]);
+        expect(p.invalidCitations).toBe(0);
+    });
+
+    it('drops a citation whose lines exist but say something else', () => {
+        const p = parseBrowseResponse({ ...message, content: 'Pricing starts at ninety dollars monthly【2†L30-L32】.' });
+        expect(p.invalidCitations).toBe(1);
+        expect(p.chunks).toHaveLength(4); // no valid citation left: every opened page counts equally
     });
 
     it('strips the markers from the stored answer and keeps the searches', () => {
