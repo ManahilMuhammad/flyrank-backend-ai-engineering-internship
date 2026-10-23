@@ -351,8 +351,14 @@
       "predicted_at": "2026-10-23T14:40:17.259Z"
     },
     "p09:semrush": {
-      "error": "LLM rate limit reached, try again in a minute",
-      "page_hash": "91e9a37569f29f876f4f031a8ad61cc32d93c1229747b6b4f0be49d737ed89d2"
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Semrush has invested heavily in AI Overview monitoring across its suite. The Organic Rankings tool flags which of your ranked keywords trigger AI Overviews; Position Tracking shows how frequently your domain appears within those summaries; and the Visibility Overview report gives a topic-level snapshot of brand presence. It is a substantial toolkit for a problem most platforms are still catching up to.",
+      "confidence": 0.95,
+      "model": "gemini-3.8-flash",
+      "page_hash": "91e9a37569f29f876f4f031a8ad61cc32d93c1229747b6b4f0be49d737ed89d2",
+      "predicted_at": "2026-10-23T14:50:13.536Z"
     },
     "p10:flyrank": {
       "stance": "absent",
@@ -385,8 +391,14 @@
       "predicted_at": "2026-10-22T20:18:29.894Z"
     },
     "p10:semrush": {
-      "error": "LLM rate limit reached, try again in a minute",
-      "page_hash": "e42b792a99a56f4de379163d3ce16e5f8db23be9c3ef5549a3556f8c3b86c4b1"
+      "stance": "favorable",
+      "isStale": false,
+      "staleReason": null,
+      "evidence": "Semrush does just about everything you could ask an SEO tool to do exceptionally well, which is why it comes in as the best overall SEO tracker.",
+      "confidence": 0.98,
+      "model": "gemini-3.8-flash",
+      "page_hash": "e42b792a99a56f4de379163d3ce16e5f8db23be9c3ef5549a3556f8c3b86c4b1",
+      "predicted_at": "2026-10-23T14:52:34.026Z"
     }
   },
   "prompt_version": "standing-v1",
