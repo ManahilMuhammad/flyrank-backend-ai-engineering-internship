@@ -1,3 +1,23 @@
+<p align="center"> 
+  <img src="https://github.com/user-attachments/assets/76124d7f-6088-46ed-bf0a-c66cf0d2fa18" 
+    alt="Priors — FlyRank AI Engineering Internship" 
+    width="100%" /> 
+</p>
+
+<div align="center">
+
+![Node.js](https://img.shields.io/badge/Node.js-ESM-3EF589?style=flat-square&labelColor=0C1E17)
+![Express](https://img.shields.io/badge/Express-5-3EF589?style=flat-square&labelColor=0C1E17)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-3EF589?style=flat-square&labelColor=0C1E17)
+![Supabase](https://img.shields.io/badge/Supabase-Auth-3EF589?style=flat-square&labelColor=0C1E17)
+![Gemini](https://img.shields.io/badge/Gemini-API-3EF589?style=flat-square&labelColor=0C1E17)
+![Groq](https://img.shields.io/badge/Groq-API-3EF589?style=flat-square&labelColor=0C1E17)
+![Status](https://img.shields.io/badge/status-production-3EF589?style=flat-square&labelColor=0C1E17)
+
+</div>
+
+---
+
 # Priors
 
 **Which third-party pages do AI assistants build their answers from, what do those pages say about your brand, and which ones are worth fixing first?**
@@ -232,5 +252,3 @@ scripts/           eval-build, eval-score
 eval/              evaluation cases, labelling guide, labels, predictions, results
 test/              vitest + supertest, against the Docker Postgres and Mailpit
 ```
-
-**Stack:** Node.js (ESM), Express 5, PostgreSQL 16, pg-boss, Supabase Auth, Zod, Gemini API, Groq API, Mozilla Readability + jsdom, pdfkit, nodemailer, Vitest.
